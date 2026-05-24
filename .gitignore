@@ -1,0 +1,6 @@
+.env
+ai-service/src/main/resources/application.yaml
+api-gateway/src/main/resources/application.yaml
+dispatch-service/src/main/resources/application.yaml
+incident-service/src/main/resources/application.yaml
+notification-service/src/main/resources/application.yaml
