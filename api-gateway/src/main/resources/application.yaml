@@ -1,3 +1,35 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: api-gateway
+  cloud:
+    gateway:
+      routes:
+      - id: incident-service
+        uri: http://incident-service:8081
+        predicates:
+          - Path=/api/incidents/**
+
+
+      - id: dispatch-service
+        uri:    http://dispatch-service:8082
+        predicates:
+          - Path=/api/dispatch/**
+
+      - id: ai-service
+        uri:    http://ai-service:8083
+        predicates:
+          - Path=/api/ai/**
+
+      - id: notification-service
+        uri:    http://notification-service:8084
+        predicates:
+          - Path=/api/notifications/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

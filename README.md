@@ -1,0 +1,1 @@
+# CodeRed — Emergency Dispatch Platform

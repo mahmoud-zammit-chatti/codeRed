@@ -32,4 +32,3 @@ build/
 ### VS Code ###
 .vscode/
 ### credentials###
-incident-service/src/main/resources/application.yaml
