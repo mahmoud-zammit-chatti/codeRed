@@ -3,6 +3,7 @@ package com.mahmoud.incident_service.DTOs;
 
 import com.mahmoud.incident_service.Models.Incident;
 import com.mahmoud.incident_service.Models.Status;
+import com.mahmoud.incident_service.RabbitMQ.IncidentCreatedMessage;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -11,7 +12,7 @@ public interface IncidentMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", constant = "PENDING")
-    @Mapping(target = "severity", constant = "LOW")
+    @Mapping(target = "severity", constant = "MEDIUM")
     @Mapping(target = "type", constant = "OTHER")
     @Mapping(target = "agentId", ignore = true)
     @Mapping(target= "dispatchedUnitId", ignore = true)
@@ -20,5 +21,7 @@ public interface IncidentMapper {
     Incident toEntity(CreateIncidentRequestDTO request);
 
     IncidentResponseDTO toResponse(Incident incident);
+
+    IncidentCreatedMessage toIncidentCreatedMessage(Incident incident);
 
 }

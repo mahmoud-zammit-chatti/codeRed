@@ -1,0 +1,47 @@
+[
+  {
+    "label": "Run incident-service",
+    "command": "./mvnw",
+    "args": ["spring-boot:run"],
+    "cwd": "incident-service",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk"
+    }
+  },
+  {
+    "label": "Run api-gateway",
+    "command": "./mvnw",
+    "args": ["spring-boot:run"],
+    "cwd": "api-gateway",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk"
+    }
+  },
+  {
+    "label": "Run ai-service",
+    "command": "./mvnw",
+    "args": ["spring-boot:run"],
+    "cwd": "ai-service",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk"
+    }
+  },
+  {
+    "label": "Run dispatch-service",
+    "command": "./mvnw",
+    "args": ["spring-boot:run"],
+    "cwd": "dispatch-service",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk"
+    }
+  },
+  {
+    "label": "Run notification-service",
+    "command": "./mvnw",
+    "args": ["spring-boot:run"],
+    "cwd": "notification-service",
+    "env": {
+      "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk"
+    }
+  }
+]

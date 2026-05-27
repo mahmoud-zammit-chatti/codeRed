@@ -36,3 +36,8 @@ management:
     web:
       exposure:
         include: health,info
+
+
+AI_EVALUATION_QUEUE: ai-evaluation-queue
+INCIDENT_EVALUATED_BINDING_KEY: incident.evaluated
+INCIDENT_CREATED_ROUTING_KEY: incident.created
