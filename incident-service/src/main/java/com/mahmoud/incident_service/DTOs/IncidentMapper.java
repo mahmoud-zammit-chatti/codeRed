@@ -3,7 +3,7 @@ package com.mahmoud.incident_service.DTOs;
 
 import com.mahmoud.incident_service.Models.Incident;
 import com.mahmoud.incident_service.Models.Status;
-import com.mahmoud.incident_service.RabbitMQ.IncidentCreatedMessage;
+import com.mahmoud.events.IncidentCreatedEvent;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -22,6 +22,6 @@ public interface IncidentMapper {
 
     IncidentResponseDTO toResponse(Incident incident);
 
-    IncidentCreatedMessage toIncidentCreatedMessage(Incident incident);
+    IncidentCreatedEvent toIncidentCreatedEvent(Incident incident);
 
 }

@@ -1,5 +1,6 @@
 package com.mahmoud.incident_service.Services;
 
+import com.mahmoud.events.IncidentAiEvalEvent;
 import com.mahmoud.incident_service.DTOs.CreateIncidentRequestDTO;
 import com.mahmoud.incident_service.DTOs.IncidentMapper;
 import com.mahmoud.incident_service.DTOs.IncidentResponseDTO;
@@ -7,7 +8,8 @@ import com.mahmoud.incident_service.Exceptions.IncidentNotFoundException;
 import com.mahmoud.incident_service.Models.Incident;
 import com.mahmoud.incident_service.Models.Severity;
 import com.mahmoud.incident_service.Models.Status;
-import com.mahmoud.incident_service.RabbitMQ.IncidentCreatedMessage;
+import com.mahmoud.events.IncidentCreatedEvent;
+import com.mahmoud.incident_service.Models.Type;
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -43,11 +45,11 @@ public class IncidentService {
         Incident savedIncident = incidentRepo.save(incident);
         //publish incident to RabbitMQ
 
-        //build the payload for sending
-        IncidentCreatedMessage incidentCreatedMessage = incidentMapper.toIncidentCreatedMessage(savedIncident);
+        // build the payload for sending using shared DTO
+        IncidentCreatedEvent incidentCreatedEvent = incidentMapper.toIncidentCreatedEvent(savedIncident);
 
-        //publish the payload with the routing key
-        amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY, incidentCreatedMessage);
+        // publish the payload with the routing key
+        amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY, incidentCreatedEvent);
 
 
         return incidentMapper.toResponse(savedIncident);
@@ -55,8 +57,15 @@ public class IncidentService {
 
 
     @RabbitListener(queues = "ai-evaluation-queue")
-    public void handleAiEvaluation(){
+    public void handleAiEvaluation(IncidentAiEvalEvent event){
         System.out.println("received message from AI service");
+        Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("Incident with ID " + event.getIncidentId() + " not found"));
+
+        incident.setSeverity(Severity.valueOf(event.getEvaluation().toUpperCase()));
+        incident.setType(Type.valueOf(event.getRecommendedAction().toUpperCase()));
+        incidentRepo.save(incident);
+
+
     }
 
 

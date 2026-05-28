@@ -9,7 +9,15 @@
         <option value="$PROJECT_DIR$/dispatch-service/pom.xml" />
         <option value="$PROJECT_DIR$/incident-service/pom.xml" />
         <option value="$PROJECT_DIR$/notification-service/pom.xml" />
+        <option value="$PROJECT_DIR$/modules/pom.xml" />
+        <option value="$PROJECT_DIR$/events/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/events/pom.xml" />
+        <option value="$PROJECT_DIR$/modules/pom.xml" />
+      </set>
     </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_25" default="true" project-jdk-name="openjdk-25" project-jdk-type="JavaSDK">
