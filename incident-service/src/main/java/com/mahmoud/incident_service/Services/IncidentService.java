@@ -1,6 +1,7 @@
 package com.mahmoud.incident_service.Services;
 
-import com.mahmoud.events.IncidentAiEvalEvent;
+import com.mahmoud.schemas.events.IncidentAiEvalEvent;
+
 import com.mahmoud.incident_service.DTOs.CreateIncidentRequestDTO;
 import com.mahmoud.incident_service.DTOs.IncidentMapper;
 import com.mahmoud.incident_service.DTOs.IncidentResponseDTO;
@@ -8,7 +9,7 @@ import com.mahmoud.incident_service.Exceptions.IncidentNotFoundException;
 import com.mahmoud.incident_service.Models.Incident;
 import com.mahmoud.incident_service.Models.Severity;
 import com.mahmoud.incident_service.Models.Status;
-import com.mahmoud.events.IncidentCreatedEvent;
+import com.mahmoud.schemas.events.IncidentCreatedEvent;
 import com.mahmoud.incident_service.Models.Type;
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
 import org.springframework.amqp.core.AmqpTemplate;

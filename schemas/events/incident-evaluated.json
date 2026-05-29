@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "incident-evaluated",
+  "title": "IncidentAiEvalEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incidentId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "evaluation": {
+      "type": "string"
+    },
+    "recommendedAction": {
+      "type": "string"
+    },
+    "confidenceScore": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "incidentId",
+    "evaluation",
+    "recommendedAction",
+    "confidenceScore"
+  ]
+}
+

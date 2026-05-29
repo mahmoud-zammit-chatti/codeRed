@@ -38,9 +38,16 @@ spring:
   docker:
     compose:
       enabled: false
-
+  ai:
+    openai:
+      api-key: ${GROQ_API_KEY}
+      base-url: ${GROQ_BASE_URL}
+      chat:
+        model: ${GROQ_MODEL}
 
 EXCHANGE_NAME: incident_exchange
 INCIDENT_CREATION_QUEUE: incident-creation-queue
 INCIDENT_CREATED_BINDING_KEY: incident.created
 INCIDENT_EVALUATED_ROUTING_KEY: incident.evaluated
+
+

@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.6</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
+ 	<parent>
+ 		<groupId>org.springframework.boot</groupId>
+ 		<artifactId>spring-boot-starter-parent</artifactId>
+ 		<version>4.1.0-RC1</version>
+ 		<relativePath/> <!-- lookup parent from repository -->
+ 	</parent>
 	<groupId>com.mahmoud</groupId>
 	<artifactId>ai-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -29,7 +29,27 @@
 	<properties>
 		<java.version>21</java.version>
 	</properties>
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
+	</repositories>
+
+	<dependencyManagement>
+		<dependencies>
+						<dependency>
+							<groupId>org.springframework.ai</groupId>
+							<artifactId>spring-ai-bom</artifactId>
+							<version>2.0.0-M8</version>
+							<type>pom</type>
+							<scope>import</scope>
+						</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -102,14 +122,34 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.mahmoud</groupId>
-			<artifactId>codered-events</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-model-openai</artifactId>
+			<version>2.0.0-M8</version>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.jsonschema2pojo</groupId>
+				<artifactId>jsonschema2pojo-maven-plugin</artifactId>
+				<version>1.2.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<sourceDirectory>${project.basedir}/../schemas/events</sourceDirectory>
+							<targetPackage>com.mahmoud.schemas.events</targetPackage>
+							<outputDirectory>${project.build.directory}/generated-sources/jsonschema2pojo</outputDirectory>
+							<useJakartaValidation>true</useJakartaValidation>
+							<useTitleAsClassname>true</useTitleAsClassname>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

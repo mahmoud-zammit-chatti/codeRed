@@ -114,15 +114,29 @@
 			<version>${org.mapstruct.version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.mahmoud</groupId>
-			<artifactId>codered-events</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.jsonschema2pojo</groupId>
+				<artifactId>jsonschema2pojo-maven-plugin</artifactId>
+				<version>1.2.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<sourceDirectory>${project.basedir}/../schemas/events</sourceDirectory>
+							<targetPackage>com.mahmoud.schemas.events</targetPackage>
+							<outputDirectory>${project.build.directory}/generated-sources/jsonschema2pojo</outputDirectory>
+							<useJakartaValidation>true</useJakartaValidation>
+							<useTitleAsClassname>true</useTitleAsClassname>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
