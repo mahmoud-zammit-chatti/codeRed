@@ -60,7 +60,7 @@ public class IncidentService {
     @RabbitListener(queues = "ai-evaluation-queue")
     public void handleAiEvaluation(IncidentAiEvalEvent event){
         System.out.println("received message from AI service");
-        Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("Incident with ID " + event.getIncidentId() + " not found"));
+        Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
 
         incident.setSeverity(Severity.valueOf(event.getEvaluation().toUpperCase()));
         incident.setType(Type.valueOf(event.getRecommendedAction().toUpperCase()));
@@ -71,17 +71,17 @@ public class IncidentService {
 
 
     public IncidentResponseDTO getIncidentById(UUID incidentId){
-        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("Incident with ID " + incidentId + " not found"));
+        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
         return incidentMapper.toResponse(incident);
     }
 
     public void  setIncidentStatus(UUID incidentId, Status status){
-        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("Incident with ID " + incidentId + " not found"));
+        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
         incident.setStatus(status);
         incidentRepo.save(incident);
     }
     public void setIncidentSeverity(UUID incidentId, Severity severity){
-        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("Incident with ID " + incidentId + " not found"));
+        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
         incident.setSeverity(severity);
         incidentRepo.save(incident);
     }

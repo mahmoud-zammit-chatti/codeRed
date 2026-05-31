@@ -1,7 +1,6 @@
 package com.mahmoud.incident_service.RabbitMQ;
 
 
-import com.rabbitmq.client.AMQP;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
