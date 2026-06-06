@@ -10,6 +10,8 @@ import com.mahmoud.incident_service.Models.Incident;
 import com.mahmoud.incident_service.Models.Severity;
 import com.mahmoud.incident_service.Models.Status;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
+
+
 import com.mahmoud.incident_service.Models.Type;
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -17,6 +19,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -34,15 +37,17 @@ public class IncidentService {
     private final IncidentRepo incidentRepo;
     private final IncidentMapper incidentMapper;
     private final AmqpTemplate amqpTemplate;
-    public IncidentService(IncidentRepo incidentRepo, IncidentMapper incidentMapper, AmqpTemplate amqpTemplate) {
+    private final Clock buisnessClock;
+    public IncidentService(IncidentRepo incidentRepo, IncidentMapper incidentMapper, AmqpTemplate amqpTemplate, Clock buisnessClock) {
         this.incidentRepo = incidentRepo;
         this.incidentMapper = incidentMapper;
         this.amqpTemplate = amqpTemplate;
+        this.buisnessClock = buisnessClock;
     }
 
     public IncidentResponseDTO createIncident(CreateIncidentRequestDTO request){
         Incident incident = incidentMapper.toEntity(request);
-        incident.setCreatedAt(Instant.now());
+        incident.setCreatedAt(Instant.now(buisnessClock));
         Incident savedIncident = incidentRepo.save(incident);
         //publish incident to RabbitMQ
 

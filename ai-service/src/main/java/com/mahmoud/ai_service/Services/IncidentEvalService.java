@@ -1,6 +1,7 @@
 package com.mahmoud.ai_service.Services;
 
 
+import com.mahmoud.Exceptions.IncidentEvaluationException;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -34,13 +35,17 @@ public class IncidentEvalService {
     public void handleIncidentCreation(IncidentCreatedEvent event){
 
         System.out.println("AI Service received incident: " + event.getId());
-        IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
+       
+
+
+            IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
+        
 
         amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_EVALUATED_ROUTING_KEY, incidentAiEvalEvent);
 
     }
 
-    private IncidentAiEvalEvent evaluateIncident(UUID id,String description) {
+    private IncidentAiEvalEvent evaluateIncident(UUID id,String description) throws IncidentEvaluationException {
         // Build a clear, strict prompt that asks the model to return only a JSON object
         // with the exact fields we expect. Use String.format to safely inject values.
         String safeDescription = description == null ? "" : description.replace("\"", "'");
@@ -71,11 +76,12 @@ public class IncidentEvalService {
                 {"id":"11111111-1111-1111-1111-111111111111","incidentId":"%s","evaluation":"HIGH","recommendedAction":"FIRE","confidenceScore":87}
                 """, id.toString(), safeDescription, id.toString());
 
+                
         String response = model.call(prompt);
-        if (response == null) {
-            System.out.println("AI model returned null response for incident: " + id);
-            response = "{}";
+        if (response == null || response.isBlank()) {
+            throw new IncidentEvaluationException("AI model returned an empty response for incident: " + id);
         }
+
         // Extract fields from the model response and map them into the event.
         IncidentAiEvalEvent event = new IncidentAiEvalEvent();
         event.setId(UUID.randomUUID());
@@ -89,12 +95,13 @@ public class IncidentEvalService {
                 event.setConfidenceScore(root.get("confidenceScore").asInt());
             }
         } catch (Exception ex) {
-            System.out.println("Failed to parse AI response JSON: " + ex.getMessage());
+            throw new IncidentEvaluationException("Failed to parse AI response JSON for incident: " + id, ex);
         }
-         System.out.println("AI Service response: " + response);
 
         return event;
-     }
+    }
+
+
 
     private String extractJsonObject(String response) {
         if (response == null) {

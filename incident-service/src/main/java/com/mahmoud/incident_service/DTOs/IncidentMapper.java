@@ -2,12 +2,13 @@ package com.mahmoud.incident_service.DTOs;
 
 
 import com.mahmoud.incident_service.Models.Incident;
-import com.mahmoud.incident_service.Models.Status;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 
 @Mapper(componentModel = "spring")
+@Component
 public interface IncidentMapper {
 
     @Mapping(target = "id", ignore = true)
