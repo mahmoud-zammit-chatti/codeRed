@@ -1,4 +1,4 @@
-package com.mahmoud.Exceptions;
+package com.mahmoud.ai_service.Exceptions;
 
 import java.time.Instant;
 import java.util.ArrayList;

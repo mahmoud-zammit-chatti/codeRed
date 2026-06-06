@@ -1,7 +1,9 @@
 package com.mahmoud.ai_service.Services;
 
 
-import com.mahmoud.Exceptions.IncidentEvaluationException;
+import com.mahmoud.ai_service.Exceptions.IncidentEvaluationException;
+import com.mahmoud.ai_service.Models.AiEval;
+import com.mahmoud.ai_service.Repositories.AiEvalRepo;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -9,10 +11,12 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -20,15 +24,17 @@ public class IncidentEvalService {
     private final AmqpTemplate amqpTemplate;
     private final OpenAiChatModel model;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AiEvalRepo aiEvalRepo;
 
     @Value("${EXCHANGE_NAME}")
     String EXCHANGE_NAME;
     @Value("${INCIDENT_EVALUATED_ROUTING_KEY}")
     String INCIDENT_EVALUATED_ROUTING_KEY;
 
-    public IncidentEvalService(AmqpTemplate amqpTemplate, OpenAiChatModel model) {
+    public IncidentEvalService(AmqpTemplate amqpTemplate, OpenAiChatModel model, AiEvalRepo aiEvalRepo) {
         this.amqpTemplate = amqpTemplate;
         this.model = model;
+        this.aiEvalRepo = aiEvalRepo;
     }
 
     @RabbitListener(queues = "incident-creation-queue")
@@ -45,6 +51,7 @@ public class IncidentEvalService {
 
     }
 
+    @Transactional
     private IncidentAiEvalEvent evaluateIncident(UUID id,String description) throws IncidentEvaluationException {
         // Build a clear, strict prompt that asks the model to return only a JSON object
         // with the exact fields we expect. Use String.format to safely inject values.
@@ -84,7 +91,6 @@ public class IncidentEvalService {
 
         // Extract fields from the model response and map them into the event.
         IncidentAiEvalEvent event = new IncidentAiEvalEvent();
-        event.setId(UUID.randomUUID());
         event.setIncidentId(id);
         try {
             String json = extractJsonObject(response);
@@ -97,6 +103,19 @@ public class IncidentEvalService {
         } catch (Exception ex) {
             throw new IncidentEvaluationException("Failed to parse AI response JSON for incident: " + id, ex);
         }
+        
+        
+        AiEval evaluation = AiEval.builder()
+        .confidenceScore(event.getConfidenceScore())
+        .evaluation(event.getEvaluation())
+        .incidentId(event.getIncidentId())
+        .recommandedAction(event.getRecommendedAction())
+        .createdAt(Instant.now())
+        .build();
+        
+        AiEval savedEval = aiEvalRepo.save(evaluation);
+
+        event.setId(savedEval.getId());
 
         return event;
     }

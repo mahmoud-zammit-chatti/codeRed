@@ -18,6 +18,7 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -45,6 +46,7 @@ public class IncidentService {
         this.buisnessClock = buisnessClock;
     }
 
+    @Transactional
     public IncidentResponseDTO createIncident(CreateIncidentRequestDTO request){
         Incident incident = incidentMapper.toEntity(request);
         incident.setCreatedAt(Instant.now(buisnessClock));
@@ -63,34 +65,40 @@ public class IncidentService {
 
 
     @RabbitListener(queues = "ai-evaluation-queue")
+    @Transactional
     public void handleAiEvaluation(IncidentAiEvalEvent event){
         System.out.println("received message from AI service");
         Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
 
         incident.setSeverity(Severity.valueOf(event.getEvaluation().toUpperCase()));
         incident.setType(Type.valueOf(event.getRecommendedAction().toUpperCase()));
+        incident.setUpdatedAt(Instant.now(buisnessClock));
         incidentRepo.save(incident);
 
 
     }
 
-
+    @Transactional
     public IncidentResponseDTO getIncidentById(UUID incidentId){
         Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
         return incidentMapper.toResponse(incident);
     }
 
+    @Transactional
     public void  setIncidentStatus(UUID incidentId, Status status){
         Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
         incident.setStatus(status);
         incidentRepo.save(incident);
     }
+
+    @Transactional
     public void setIncidentSeverity(UUID incidentId, Severity severity){
         Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
         incident.setSeverity(severity);
         incidentRepo.save(incident);
     }
 
+    @Transactional
     public ArrayList<IncidentResponseDTO> getAllPendingIncidents(){
 
         ArrayList<Incident> incidents = incidentRepo.findAllPendingIncidents();

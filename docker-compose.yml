@@ -42,7 +42,9 @@ services:
       - POSTGRES_PASSWORD=${INCIDENT_DB_PASS}
 
   incident-service:
-    build: ./incident-service
+    build:
+      context: .
+      dockerfile: incident-service/Dockerfile
     ports:
       - "8081:8081"
     depends_on:
@@ -103,7 +105,9 @@ services:
       - POSTGRES_PASSWORD=${AI_DB_PASS}
 
   ai-service:
-    build: ./ai-service
+    build:
+        context: .
+        dockerfile: ai-service/Dockerfile 
     ports:
       - "8083:8083"
     depends_on:
@@ -115,6 +119,9 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASS}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_BASE_URL=${GROQ_BASE_URL}
+      - GROQ_MODEL=${GROQ_MODEL}
   notification-service:
     build: ./notification-service
     ports:

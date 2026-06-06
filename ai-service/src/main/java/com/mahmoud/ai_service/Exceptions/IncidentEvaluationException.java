@@ -1,4 +1,4 @@
-package com.mahmoud.Exceptions;
+package com.mahmoud.ai_service.Exceptions;
 
 public class IncidentEvaluationException extends RuntimeException {
     public IncidentEvaluationException(String message) {
