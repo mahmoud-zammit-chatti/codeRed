@@ -45,9 +45,13 @@ spring:
       chat:
         model: ${GROQ_MODEL}
 
-EXCHANGE_NAME: incident_exchange
+EXCHANGE_NAME: incident.exchange
 INCIDENT_CREATION_QUEUE: incident-creation-queue
 INCIDENT_CREATED_BINDING_KEY: incident.created
-INCIDENT_EVALUATED_ROUTING_KEY: incident.evaluated
+INCIDENT_EVALUATED_ROUTING_KEY: incident.classified
+
+INCIDENT_DLX_EXCHANGE_NAME: incident.dlx
+INCIDENT_DLX_QUEUE_NAME: incident.created.dlq
+INCIDENT_DLX_ROUTING_KEY: incident.created.dead
 
 

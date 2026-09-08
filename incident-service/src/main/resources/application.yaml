@@ -29,9 +29,9 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-    # url: jdbc:postgresql://localhost:5435/incident_db
-    # user: admin
-    # password: ${INCIDENT_DB_PASS}
+    url: jdbc:postgresql://localhost:5435/incident_db
+    user: admin
+    password: ${INCIDENT_DB_PASS}
   docker:
     compose:
       enabled: false
@@ -45,7 +45,7 @@ management:
 
 
 
-EXCHANGE_NAME: incident_exchange
-AI_EVALUATION_QUEUE: ai-evaluation-queue
-INCIDENT_EVALUATED_BINDING_KEY: incident.evaluated
+EXCHANGE_NAME: incident.exchange
+AI_CLASSIFICATION_QUEUE: incident.classified.queue
+INCIDENT_CLASSIFIED_BINDING_KEY: incident.classified
 INCIDENT_CREATED_ROUTING_KEY: incident.created

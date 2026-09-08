@@ -24,6 +24,8 @@ public class Incident {
     private Status status;
     @Enumerated(EnumType.STRING)
     private Type type;
+    @Enumerated(EnumType.STRING)
+    private ClassificationStatus classificationStatus;
     private String location;
     private String reportedBy;
     private UUID agentId;

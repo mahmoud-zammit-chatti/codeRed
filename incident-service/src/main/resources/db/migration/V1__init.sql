@@ -12,6 +12,6 @@ CREATE TABLE incident (
                           reported_by VARCHAR(8) NOT NULL,
                           agent_id UUID ,
                           dispatched_unit_id UUID,
-                          createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

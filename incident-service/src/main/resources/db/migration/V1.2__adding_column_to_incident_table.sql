@@ -1,0 +1,1 @@
+alter table incident add column classification_status varchar(255);

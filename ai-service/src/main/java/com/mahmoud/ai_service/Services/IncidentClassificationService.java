@@ -7,6 +7,7 @@ import com.mahmoud.ai_service.Repositories.AiEvalRepo;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +21,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Service
-public class IncidentEvalService {
+public class IncidentClassificationService {
     private final AmqpTemplate amqpTemplate;
     private final OpenAiChatModel model;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -29,30 +30,39 @@ public class IncidentEvalService {
     @Value("${EXCHANGE_NAME}")
     String EXCHANGE_NAME;
     @Value("${INCIDENT_EVALUATED_ROUTING_KEY}")
-    String INCIDENT_EVALUATED_ROUTING_KEY;
+    String INCIDENT_CLASSIFIED_ROUTING_KEY;
 
-    public IncidentEvalService(AmqpTemplate amqpTemplate, OpenAiChatModel model, AiEvalRepo aiEvalRepo) {
+    public IncidentClassificationService(AmqpTemplate amqpTemplate, OpenAiChatModel model, AiEvalRepo aiEvalRepo) {
         this.amqpTemplate = amqpTemplate;
         this.model = model;
         this.aiEvalRepo = aiEvalRepo;
     }
 
+
+
+    @Transactional
+    public void sendMessageToDLX(IncidentCreatedEvent createdIncidentEvent){
+
+
+
+    }
+
+
     @RabbitListener(queues = "incident-creation-queue")
     public void handleIncidentCreation(IncidentCreatedEvent event){
 
         System.out.println("AI Service received incident: " + event.getId());
-       
 
+        //IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
 
-            IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
-        
+        //amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CLASSIFIED_ROUTING_KEY, incidentAiEvalEvent);
 
-        amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_EVALUATED_ROUTING_KEY, incidentAiEvalEvent);
+        throw new AmqpRejectAndDontRequeueException("temporary - testing DLX routing");
 
     }
 
     @Transactional
-    private IncidentAiEvalEvent evaluateIncident(UUID id,String description) throws IncidentEvaluationException {
+    public IncidentAiEvalEvent evaluateIncident(UUID id,String description) throws IncidentEvaluationException {
         // Build a clear, strict prompt that asks the model to return only a JSON object
         // with the exact fields we expect. Use String.format to safely inject values.
         String safeDescription = description == null ? "" : description.replace("\"", "'");

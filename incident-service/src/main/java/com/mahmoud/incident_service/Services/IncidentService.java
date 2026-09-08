@@ -1,28 +1,30 @@
 package com.mahmoud.incident_service.Services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mahmoud.incident_service.Models.*;
+import com.mahmoud.incident_service.Repositories.OutboxRepo;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 
 import com.mahmoud.incident_service.DTOs.CreateIncidentRequestDTO;
 import com.mahmoud.incident_service.DTOs.IncidentMapper;
 import com.mahmoud.incident_service.DTOs.IncidentResponseDTO;
 import com.mahmoud.incident_service.Exceptions.IncidentNotFoundException;
-import com.mahmoud.incident_service.Models.Incident;
-import com.mahmoud.incident_service.Models.Severity;
-import com.mahmoud.incident_service.Models.Status;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
 
 
-import com.mahmoud.incident_service.Models.Type;
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -32,18 +34,21 @@ public class IncidentService {
     String EXCHANGE_NAME;
     @Value("${INCIDENT_CREATED_ROUTING_KEY}")
     String INCIDENT_CREATED_ROUTING_KEY;
-    @Value("${AI_EVALUATION_QUEUE}")
-    String AI_EVALUATION_QUEUE;
+    @Value("${AI_CLASSIFICATION_QUEUE}")
+    String AI_CLASSIFICATION_QUEUE;
 
     private final IncidentRepo incidentRepo;
     private final IncidentMapper incidentMapper;
     private final AmqpTemplate amqpTemplate;
     private final Clock buisnessClock;
-    public IncidentService(IncidentRepo incidentRepo, IncidentMapper incidentMapper, AmqpTemplate amqpTemplate, Clock buisnessClock) {
+    private final OutboxRepo outboxRepo;
+    private final ObjectMapper ObjectMapper = new ObjectMapper();
+    public IncidentService(IncidentRepo incidentRepo, IncidentMapper incidentMapper, AmqpTemplate amqpTemplate, Clock buisnessClock, OutboxRepo outboxRepo) {
         this.incidentRepo = incidentRepo;
         this.incidentMapper = incidentMapper;
         this.amqpTemplate = amqpTemplate;
         this.buisnessClock = buisnessClock;
+        this.outboxRepo = outboxRepo;
     }
 
     @Transactional
@@ -55,16 +60,44 @@ public class IncidentService {
 
         // build the payload for sending using shared DTO
         IncidentCreatedEvent incidentCreatedEvent = incidentMapper.toIncidentCreatedEvent(savedIncident);
+        try {
+            OutboxEvent outboxEvent = OutboxEvent.builder()
+                    .title("Incident Created")
+                    .payload(ObjectMapper.writeValueAsString(incidentCreatedEvent))
+                    .createdAt(Instant.now(buisnessClock))
+                    .sent(false)
+                    .build();
+            outboxRepo.save(outboxEvent);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("error while building outbox payload: "+e);
+        }
 
-        // publish the payload with the routing key
-        amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY, incidentCreatedEvent);
 
+        
 
         return incidentMapper.toResponse(savedIncident);
     }
 
 
-    @RabbitListener(queues = "ai-evaluation-queue")
+
+    @Scheduled(fixedDelay = 500)
+    public void relayOutboxEvents() {
+        List<OutboxEvent> pending = outboxRepo.findBySentFalseOrderByCreatedAtAsc();
+        for (OutboxEvent row : pending) {
+            try {
+                amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY, row.getPayload());
+                row.setSent(true);
+                outboxRepo.save(row);
+            } catch (Exception e) {
+                // leave it unsent, it'll retry next tick — no data loss possible
+            }
+        }
+    }
+
+
+
+
+  //  @RabbitListener(queues = "ai-evaluation-queue")
     @Transactional
     public void handleAiEvaluation(IncidentAiEvalEvent event){
         System.out.println("received message from AI service");

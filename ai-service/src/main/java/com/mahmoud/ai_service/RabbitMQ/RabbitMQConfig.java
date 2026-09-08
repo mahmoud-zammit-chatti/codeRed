@@ -20,23 +20,54 @@ public class RabbitMQConfig {
     String INCIDENT_CREATION_QUEUE;
     @Value("${INCIDENT_CREATED_BINDING_KEY}")
     String INCIDENT_CREATED_BINDING_KEY;
+    @Value("${INCIDENT_DLX_EXCHANGE_NAME}")
+    String INCIDENT_DLX_EXCHANGE_NAME;
+    @Value("${INCIDENT_DLX_ROUTING_KEY}")
+    String INCIDENT_DLX_ROUTING_KEY;
+    @Value("${INCIDENT_DLX_QUEUE_NAME}")
+    String INCIDENT_DLX_QUEUE_NAME;
+
 
     @Bean
-    public TopicExchange topicExchange() {
-        // Declares (or uses) a topic exchange with the given name
-        return new TopicExchange(EXCHANGE_NAME);
+    public DirectExchange directExchange() {
+        // Declares (or uses) a direct exchange with the given name, in this case it uses it because incident service is responsible for the exchange
+        return new DirectExchange(EXCHANGE_NAME);
     }
 
     @Bean
+    public DirectExchange directDlxExchange() {
+        return new DirectExchange(INCIDENT_DLX_EXCHANGE_NAME);
+    }
+
+    @Bean
+
     public Queue incidentCreationQueue(){
-        return new Queue(INCIDENT_CREATION_QUEUE,true);
+        return QueueBuilder.durable(INCIDENT_CREATION_QUEUE)
+                .withArgument("x-dead-letter-exchange", INCIDENT_DLX_EXCHANGE_NAME)
+                .withArgument("x-dead-letter-routing-key", INCIDENT_DLX_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Queue incidentDLXQueue(){
+        return QueueBuilder.durable(INCIDENT_DLX_QUEUE_NAME).build();
+    }
+
+
+
+    @Bean
+    public Binding bindIncidentDlxQueue(){
+        return  BindingBuilder
+                .bind(incidentDLXQueue())
+                .to(directDlxExchange())
+                .with(INCIDENT_DLX_ROUTING_KEY);
     }
 
     @Bean
     public Binding bindIncidentCreationQueue(){
         return  BindingBuilder
                 .bind(incidentCreationQueue())
-                .to(topicExchange())
+                .to(directExchange())
                 .with(INCIDENT_CREATED_BINDING_KEY);
     }
 

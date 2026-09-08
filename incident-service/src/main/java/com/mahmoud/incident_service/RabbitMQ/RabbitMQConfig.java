@@ -18,29 +18,31 @@ public class RabbitMQConfig {
     @Value("${EXCHANGE_NAME}")
     String EXCHANGE_NAME;
 
-    @Value("${INCIDENT_EVALUATED_BINDING_KEY}")
-    String INCIDENT_EVALUATED_BINDING_KEY;
 
-    @Value("${AI_EVALUATION_QUEUE}")
-    String AI_SERVICE_QUEUE;
+    @Value("${INCIDENT_CLASSIFIED_BINDING_KEY}")
+    String INCIDENT_CLASSIFIED_BINDING_KEY;
+
+
+    @Value("${AI_CLASSIFICATION_QUEUE}")
+    String AI_CLASSIFICATION_QUEUE;
 
     @Bean
-    public TopicExchange topicExchange(){
-        return new TopicExchange(EXCHANGE_NAME);
+    public DirectExchange directExchange(){
+        return new DirectExchange(EXCHANGE_NAME);
     }
 
     @Bean
-    public Queue aiServiceEvalQueue(){
-        return new Queue(AI_SERVICE_QUEUE,true);
+    public Queue aiServiceClasificationQueue(){
+        return new Queue(AI_CLASSIFICATION_QUEUE,true);
     }
 
 
     @Bean
     public Binding bindAiService(){
         return BindingBuilder.
-                bind(aiServiceEvalQueue())
-                .to(topicExchange())
-                .with(INCIDENT_EVALUATED_BINDING_KEY);
+                bind(aiServiceClasificationQueue())
+                .to(directExchange())
+                .with(INCIDENT_CLASSIFIED_BINDING_KEY);
     }
 
 

@@ -65,21 +65,7 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-jdbc-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation-test</artifactId>
-			<scope>test</scope>
-		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
@@ -113,7 +99,55 @@
 			<artifactId>mapstruct</artifactId>
 			<version>${org.mapstruct.version}</version>
 		</dependency>
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.10.2</version>
+        <scope>test</scope>
+    </dependency>
 
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>1.19.8</version>
+    <scope>test</scope>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-webtestclient</artifactId>
+    <version>4.1.0-RC1</version>
+    <scope>compile</scope>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-testcontainers</artifactId>
+    <scope>test</scope>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <version>4.0.6</version>
+    <scope>test</scope>
+</dependency>
+
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-core</artifactId>
+    <version>5.23.0</version>
+    <scope>test</scope>
+</dependency>
 	</dependencies>
 
 	<build>
@@ -193,6 +227,26 @@
 					</execution>
 				</executions>
 
+			</plugin>
+
+			   <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.2.5</version>
+        </plugin>
+
+			<plugin>
+				<groupId>org.flywaydb</groupId>
+				<artifactId>flyway-maven-plugin</artifactId>
+				<version>11.14.1</version>
+				<configuration>
+					<url>jdbc:postgresql://localhost:5435/incident_db</url>
+					<user>admin</user>
+					<password>${env.INCIDENT_DB_PASS}</password>
+					<locations>
+						<location>classpath:db/migration</location>
+					</locations>
+				</configuration>
 			</plugin>
 
 		</plugins>
