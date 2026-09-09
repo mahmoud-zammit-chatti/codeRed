@@ -55,6 +55,7 @@ public class IncidentService {
     public IncidentResponseDTO createIncident(CreateIncidentRequestDTO request){
         Incident incident = incidentMapper.toEntity(request);
         incident.setCreatedAt(Instant.now(buisnessClock));
+        incident.setClassificationStatus(ClassificationStatus.PENDING_CLASSIFICATION);
         Incident savedIncident = incidentRepo.save(incident);
         //publish incident to RabbitMQ
 
@@ -99,12 +100,12 @@ public class IncidentService {
 
 
 
-  //  @RabbitListener(queues = "ai-evaluation-queue")
+  @RabbitListener(queues = "incident.classified.queue")
     @Transactional
     public void handleAiEvaluation(IncidentAiEvalEvent event){
         System.out.println("received message from AI service");
         Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
-
+        incident.setClassificationStatus(ClassificationStatus.CLASSIFIED);
         incident.setSeverity(Severity.valueOf(event.getEvaluation().toUpperCase()));
         incident.setType(Type.valueOf(event.getRecommendedAction().toUpperCase()));
         incident.setUpdatedAt(Instant.now(buisnessClock));
