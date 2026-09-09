@@ -1,7 +1,7 @@
 package com.mahmoud.incident_service.DTOs;
 
 
-import com.mahmoud.incident_service.Models.Type;
+import com.mahmoud.incident_service.Models.incident.Type;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

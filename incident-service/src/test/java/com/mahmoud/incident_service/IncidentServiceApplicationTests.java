@@ -16,6 +16,10 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.mahmoud.incident_service.Models.incident.Incident;
+import com.mahmoud.incident_service.Models.incident.Severity;
+import com.mahmoud.incident_service.Models.incident.Status;
+import com.mahmoud.incident_service.Models.incident.Type;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +31,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mahmoud.incident_service.DTOs.*;
 import com.mahmoud.incident_service.Exceptions.IncidentNotFoundException;
-import com.mahmoud.incident_service.Models.*;
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
 import com.mahmoud.incident_service.Services.IncidentService;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;

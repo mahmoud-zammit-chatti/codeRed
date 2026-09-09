@@ -3,6 +3,7 @@ package com.mahmoud.incident_service.Services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mahmoud.incident_service.Models.*;
+import com.mahmoud.incident_service.Models.incident.*;
 import com.mahmoud.incident_service.Repositories.OutboxRepo;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 

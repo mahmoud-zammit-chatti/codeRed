@@ -1,7 +1,7 @@
 package com.mahmoud.incident_service.Repositories;
 
 
-import com.mahmoud.incident_service.Models.Incident;
+import com.mahmoud.incident_service.Models.incident.Incident;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

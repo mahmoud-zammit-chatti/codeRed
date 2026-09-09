@@ -1,12 +1,14 @@
 package com.mahmoud.incident_service.DTOs;
 
+import com.mahmoud.incident_service.Models.incident.Severity;
+import com.mahmoud.incident_service.Models.incident.Status;
+import com.mahmoud.incident_service.Models.incident.Type;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import com.mahmoud.incident_service.Models.*;
 @Data
 @Builder
 public class IncidentResponseDTO {
