@@ -53,11 +53,16 @@ public class IncidentClassificationService {
 
         System.out.println("AI Service received incident: " + event.getId());
 
-        //IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
+        try{
 
-        //amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CLASSIFIED_ROUTING_KEY, incidentAiEvalEvent);
+        IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
 
-        throw new AmqpRejectAndDontRequeueException("temporary - testing DLX routing");
+        amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CLASSIFIED_ROUTING_KEY, incidentAiEvalEvent);
+        }catch (IncidentEvaluationException e){
+            System.err.println("Error evaluating incident: " + e.getMessage());
+            throw new AmqpRejectAndDontRequeueException("incident sent to dlx");
+        }
+
 
     }
 
@@ -67,7 +72,7 @@ public class IncidentClassificationService {
         // with the exact fields we expect. Use String.format to safely inject values.
         String safeDescription = description == null ? "" : description.replace("\"", "'");
         String prompt = String.format("""
-                You are an automated incident triage assistant. Evaluate the incident below and RETURN ONLY a single JSON object (no surrounding text, no markdown):
+                You are an automated incident classification assistant. Evaluate the incident below and RETURN ONLY a single JSON object (no surrounding text, no markdown):
 
                 REQUIRED JSON OBJECT FIELDS:
                 {
@@ -93,7 +98,7 @@ public class IncidentClassificationService {
                 {"id":"11111111-1111-1111-1111-111111111111","incidentId":"%s","evaluation":"HIGH","recommendedAction":"FIRE","confidenceScore":87}
                 """, id.toString(), safeDescription, id.toString());
 
-                
+
         String response = model.call(prompt);
         if (response == null || response.isBlank()) {
             throw new IncidentEvaluationException("AI model returned an empty response for incident: " + id);

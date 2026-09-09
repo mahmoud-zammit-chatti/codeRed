@@ -82,10 +82,12 @@ public class IncidentService {
 
     @Scheduled(fixedDelay = 500)
     public void relayOutboxEvents() {
+        ObjectMapper mapper = new ObjectMapper();
         List<OutboxEvent> pending = outboxRepo.findBySentFalseOrderByCreatedAtAsc();
         for (OutboxEvent row : pending) {
             try {
-                amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY, row.getPayload());
+                IncidentCreatedEvent event = mapper.readValue(row.getPayload(), IncidentCreatedEvent.class);
+                amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY,event);
                 row.setSent(true);
                 outboxRepo.save(row);
             } catch (Exception e) {
