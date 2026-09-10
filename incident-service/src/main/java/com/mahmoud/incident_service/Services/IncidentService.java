@@ -2,8 +2,11 @@ package com.mahmoud.incident_service.Services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mahmoud.incident_service.Exceptions.ActionNotAllowedException;
 import com.mahmoud.incident_service.Models.*;
+import com.mahmoud.incident_service.Models.classification.Classification;
 import com.mahmoud.incident_service.Models.incident.*;
+import com.mahmoud.incident_service.Repositories.ClassificationRepo;
 import com.mahmoud.incident_service.Repositories.OutboxRepo;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 
@@ -37,6 +40,8 @@ public class IncidentService {
     String INCIDENT_CREATED_ROUTING_KEY;
     @Value("${AI_CLASSIFICATION_QUEUE}")
     String AI_CLASSIFICATION_QUEUE;
+    @Value("${MODEL_VERSION}")
+    String MODEL_VERSION;
 
     private final IncidentRepo incidentRepo;
     private final IncidentMapper incidentMapper;
@@ -44,12 +49,14 @@ public class IncidentService {
     private final Clock buisnessClock;
     private final OutboxRepo outboxRepo;
     private final ObjectMapper ObjectMapper = new ObjectMapper();
-    public IncidentService(IncidentRepo incidentRepo, IncidentMapper incidentMapper, AmqpTemplate amqpTemplate, Clock buisnessClock, OutboxRepo outboxRepo) {
+    private final ClassificationRepo classificationRepo;
+    public IncidentService(IncidentRepo incidentRepo, IncidentMapper incidentMapper, AmqpTemplate amqpTemplate, Clock buisnessClock, OutboxRepo outboxRepo, ClassificationRepo classificationRepo) {
         this.incidentRepo = incidentRepo;
         this.incidentMapper = incidentMapper;
         this.amqpTemplate = amqpTemplate;
         this.buisnessClock = buisnessClock;
         this.outboxRepo = outboxRepo;
+        this.classificationRepo = classificationRepo;
     }
 
     @Transactional
@@ -105,34 +112,30 @@ public class IncidentService {
     @Transactional
     public void handleAiEvaluation(IncidentAiEvalEvent event){
         System.out.println("received message from AI service");
-        Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
-        incident.setClassificationStatus(ClassificationStatus.CLASSIFIED);
-        incident.setSeverity(Severity.valueOf(event.getEvaluation().toUpperCase()));
-        incident.setType(Type.valueOf(event.getRecommendedAction().toUpperCase()));
-        incident.setUpdatedAt(Instant.now(buisnessClock));
-        incidentRepo.save(incident);
+        try {
+            Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
 
+            if(incident.getStatus().equals(Status.RESOLVED)){
+                throw new ActionNotAllowedException("This incident has already been resolved. You can't ask a classification for it.");
+            }
 
-    }
-
-    @Transactional
-    public IncidentResponseDTO getIncidentById(UUID incidentId){
-        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
-        return incidentMapper.toResponse(incident);
-    }
-
-    @Transactional
-    public void  setIncidentStatus(UUID incidentId, Status status){
-        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
-        incident.setStatus(status);
-        incidentRepo.save(incident);
-    }
-
-    @Transactional
-    public void setIncidentSeverity(UUID incidentId, Severity severity){
-        Incident incident = incidentRepo.findById(incidentId).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
-        incident.setSeverity(severity);
-        incidentRepo.save(incident);
+          Classification classification = Classification.builder()
+                  .classificationStatus(com.mahmoud.incident_service.Models.classification.ClassificationStatus.PENDING)
+                  .incidentRef(incident)
+                  .confidence(event.getConfidenceScore())
+                  .modelVersion(MODEL_VERSION)
+                  .suggestedType(Type.valueOf(event.getRecommendedAction()))
+                  .suggestedSeverity(Severity.valueOf(event.getEvaluation()))
+                  .createdAt(Instant.now(buisnessClock))
+                  .updatedAt(null)
+                  .build();
+          classificationRepo.save(classification);
+          incident.setClassificationStatus(ClassificationStatus.PENDING_CONFIRMATION);
+          incidentRepo.save(incident);
+        } catch (IncidentNotFoundException | ActionNotAllowedException e) {
+            System.err.println("Failed to process AI evaluation for incident " + event.getIncidentId() + ": " + e.getMessage());
+            // Message is acknowledged, preventing infinite retry loop
+        }
     }
 
     @Transactional

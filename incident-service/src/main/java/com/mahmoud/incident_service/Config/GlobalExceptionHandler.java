@@ -4,6 +4,7 @@ package com.mahmoud.incident_service.Config;
 import java.time.Instant;
 import java.util.ArrayList;
 
+import com.mahmoud.incident_service.Exceptions.ActionNotAllowedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,9 +23,23 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .errorCode(HttpStatus.NOT_FOUND.value())
                 .errorLabel(HttpStatus.NOT_FOUND.name())
-                .details(new ArrayList<>()) // You can add specific error details if needed
+                .details(new ArrayList<>())
                 .build();
         
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
+
+    @ExceptionHandler(ActionNotAllowedException.class)
+    public ResponseEntity<ApiError> handleActionNotAllowedException(ActionNotAllowedException ex) {
+        ApiError apiError = ApiError.builder()
+                .timestamp(Instant.now())
+                .message(ex.getMessage())
+                .errorCode(HttpStatus.NOT_ACCEPTABLE.value())
+                .errorLabel(HttpStatus.NOT_ACCEPTABLE.name())
+                .details(new ArrayList<>())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(apiError);
+    }
+
 }

@@ -4,11 +4,16 @@ import com.mahmoud.incident_service.Models.incident.Incident;
 import com.mahmoud.incident_service.Models.incident.Severity;
 import com.mahmoud.incident_service.Models.incident.Type;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Classification {
 
     @Id
@@ -26,7 +31,7 @@ public class Classification {
 
     private Integer confidence;
 
-    private double modelVersion; // version of the model used for classification
+    private String modelVersion; // version of the model used for classification
 
     @Enumerated(EnumType.STRING)
     private ClassificationStatus classificationStatus;
