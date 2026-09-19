@@ -1,6 +1,6 @@
 package com.mahmoud.incident_service.Models.incident;
 
-public enum ClassificationStatus {
+public enum IncidentClassificationStatus {
 
     CLASSIFIED,
     PENDING_CLASSIFICATION,

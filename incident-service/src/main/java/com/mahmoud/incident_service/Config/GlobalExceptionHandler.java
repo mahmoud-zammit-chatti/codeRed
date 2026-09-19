@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 
 import com.mahmoud.incident_service.Exceptions.ActionNotAllowedException;
+import com.mahmoud.incident_service.Exceptions.ClassificationNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +41,19 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(apiError);
+    }
+
+    @ExceptionHandler(ClassificationNotFoundException.class)
+    public ResponseEntity<ApiError> handleClassificationNotFoundException(ClassificationNotFoundException ex) {
+        ApiError apiError = ApiError.builder()
+                .timestamp(Instant.now())
+                .message(ex.getMessage())
+                .errorCode(HttpStatus.NOT_FOUND.value())
+                .errorLabel(HttpStatus.NOT_FOUND.name())
+                .details(new ArrayList<>())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
 
 }

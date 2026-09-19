@@ -29,7 +29,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class IncidentService {
@@ -63,7 +62,7 @@ public class IncidentService {
     public IncidentResponseDTO createIncident(CreateIncidentRequestDTO request){
         Incident incident = incidentMapper.toEntity(request);
         incident.setCreatedAt(Instant.now(buisnessClock));
-        incident.setClassificationStatus(ClassificationStatus.PENDING_CLASSIFICATION);
+        incident.setClassificationStatus(IncidentClassificationStatus.PENDING_CLASSIFICATION);
         Incident savedIncident = incidentRepo.save(incident);
         //publish incident to RabbitMQ
 
@@ -130,7 +129,7 @@ public class IncidentService {
                   .updatedAt(null)
                   .build();
           classificationRepo.save(classification);
-          incident.setClassificationStatus(ClassificationStatus.PENDING_CONFIRMATION);
+          incident.setClassificationStatus(IncidentClassificationStatus.PENDING_CONFIRMATION);
           incidentRepo.save(incident);
         } catch (IncidentNotFoundException | ActionNotAllowedException e) {
             System.err.println("Failed to process AI evaluation for incident " + event.getIncidentId() + ": " + e.getMessage());

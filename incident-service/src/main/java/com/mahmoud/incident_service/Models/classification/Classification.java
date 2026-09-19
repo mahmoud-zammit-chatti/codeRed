@@ -1,5 +1,6 @@
 package com.mahmoud.incident_service.Models.classification;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mahmoud.incident_service.Models.incident.Incident;
 import com.mahmoud.incident_service.Models.incident.Severity;
 import com.mahmoud.incident_service.Models.incident.Type;
@@ -22,6 +23,7 @@ public class Classification {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name= "incident_id", nullable = false)
+    @JsonIgnore
     private Incident incidentRef;
 
     @Enumerated(EnumType.STRING)
