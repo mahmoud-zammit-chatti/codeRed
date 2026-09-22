@@ -18,9 +18,14 @@ import com.mahmoud.schemas.events.IncidentCreatedEvent;
 
 
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +34,9 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
 public class IncidentService {
 
@@ -64,6 +71,7 @@ public class IncidentService {
         incident.setCreatedAt(Instant.now(buisnessClock));
         incident.setClassificationStatus(IncidentClassificationStatus.PENDING_CLASSIFICATION);
         Incident savedIncident = incidentRepo.save(incident);
+        String correlationId = MDC.get("correlationId");
         //publish incident to RabbitMQ
 
         // build the payload for sending using shared DTO
@@ -73,6 +81,7 @@ public class IncidentService {
                     .title("Incident Created")
                     .payload(ObjectMapper.writeValueAsString(incidentCreatedEvent))
                     .createdAt(Instant.now(buisnessClock))
+                    .correlationId(correlationId)
                     .sent(false)
                     .build();
             outboxRepo.save(outboxEvent);
@@ -94,8 +103,16 @@ public class IncidentService {
         List<OutboxEvent> pending = outboxRepo.findBySentFalseOrderByCreatedAtAsc();
         for (OutboxEvent row : pending) {
             try {
+
                 IncidentCreatedEvent event = mapper.readValue(row.getPayload(), IncidentCreatedEvent.class);
-                amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY,event);
+                String correlationId = row.getCorrelationId() != null ? row.getCorrelationId() : UUID.randomUUID().toString();
+
+                MessagePostProcessor addCorrelationHeader = message -> {
+                    message.getMessageProperties().setHeader("x-correlation-id", correlationId);
+                    return message;
+                };
+
+                amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY,event,addCorrelationHeader);
                 row.setSent(true);
                 outboxRepo.save(row);
             } catch (Exception e) {
@@ -109,9 +126,14 @@ public class IncidentService {
 
   @RabbitListener(queues = "incident.classified.queue")
     @Transactional
-    public void handleAiEvaluation(IncidentAiEvalEvent event){
-        System.out.println("received message from AI service");
-        try {
+  public void handleAiEvaluation(IncidentAiEvalEvent event, Message message){
+
+      String correlationId = message.getMessageProperties().getHeader("x-correlation-id");
+      String resolvedCorrelationId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+      MDC.put("correlationId", resolvedCorrelationId);
+       log.info("received message from AI service for incident {} with correlationId {}", event.getIncidentId(), resolvedCorrelationId);
+
+      try {
             Incident incident = incidentRepo.findById(event.getIncidentId()).orElseThrow(()-> new IncidentNotFoundException("There was a problem finding the requested incident"));
 
             if(incident.getStatus().equals(Status.RESOLVED)){
@@ -132,9 +154,10 @@ public class IncidentService {
           incident.setClassificationStatus(IncidentClassificationStatus.PENDING_CONFIRMATION);
           incidentRepo.save(incident);
         } catch (IncidentNotFoundException | ActionNotAllowedException e) {
-            System.err.println("Failed to process AI evaluation for incident " + event.getIncidentId() + ": " + e.getMessage());
-            // Message is acknowledged, preventing infinite retry loop
-        }
+          log.warn("Failed to process AI evaluation for incident {}: {}", event.getIncidentId(), e.getMessage());
+        }finally {
+            MDC.clear();
+      }
     }
 
     @Transactional

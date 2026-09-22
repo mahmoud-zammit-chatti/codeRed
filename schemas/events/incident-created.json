@@ -5,6 +5,10 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "incidentId": {
+      "type": "string",
+      "format": "uuid"
+    },
     "id": {
       "type": "string",
       "format": "uuid"
@@ -43,4 +47,3 @@
     "createdAt"
   ]
 }
-

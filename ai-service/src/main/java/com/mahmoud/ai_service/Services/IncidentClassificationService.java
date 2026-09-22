@@ -6,9 +6,13 @@ import com.mahmoud.ai_service.Models.AiEval;
 import com.mahmoud.ai_service.Repositories.AiEvalRepo;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +25,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class IncidentClassificationService {
     private final AmqpTemplate amqpTemplate;
     private final OpenAiChatModel model;
@@ -40,27 +45,31 @@ public class IncidentClassificationService {
 
 
 
-    @Transactional
-    public void sendMessageToDLX(IncidentCreatedEvent createdIncidentEvent){
-
-
-
-    }
 
 
     @RabbitListener(queues = "incident-creation-queue")
-    public void handleIncidentCreation(IncidentCreatedEvent event){
+    public void handleIncidentCreation(IncidentCreatedEvent event, Message message) {
 
-        System.out.println("AI Service received incident: " + event.getId());
+        String correlationId = message.getMessageProperties().getHeader("x-correlation-id");
+        String resolvedCorrelationId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+        MDC.put("correlationId", resolvedCorrelationId);
 
+        log.info("AI Service received incident: {} with correlationId {}", event.getId(), resolvedCorrelationId);
         try{
 
         IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
 
-        amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CLASSIFIED_ROUTING_KEY, incidentAiEvalEvent);
+        MessagePostProcessor addCorrelationHeader = outboundMessage -> {
+            outboundMessage.getMessageProperties().setHeader("x-correlation-id", resolvedCorrelationId);
+            return outboundMessage;
+        };
+
+        amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CLASSIFIED_ROUTING_KEY, incidentAiEvalEvent, addCorrelationHeader);
         }catch (IncidentEvaluationException e){
-            System.err.println("Error evaluating incident: " + e.getMessage());
+            log.warn("Error evaluating  incident with correlationId {}: {}",resolvedCorrelationId, e.getMessage());
             throw new AmqpRejectAndDontRequeueException("incident sent to dlx");
+        }finally {
+            MDC.clear();
         }
 
 

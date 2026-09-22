@@ -27,6 +27,9 @@ public class OutboxEvent {
 
     private Instant createdAt;
 
+    @Column(name = "correlation_id")
+    private String correlationId;
+
     @Column(name = "sent")
     private boolean sent;
 
