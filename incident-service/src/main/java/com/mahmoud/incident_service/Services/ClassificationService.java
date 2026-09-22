@@ -2,6 +2,7 @@ package com.mahmoud.incident_service.Services;
 
 
 import com.mahmoud.incident_service.DTOs.ManualEditClassificationDTO;
+import com.mahmoud.incident_service.Exceptions.ActionNotAllowedException;
 import com.mahmoud.incident_service.Exceptions.ClassificationNotFoundException;
 import com.mahmoud.incident_service.Exceptions.IncidentNotFoundException;
 import com.mahmoud.incident_service.Models.classification.Classification;
@@ -40,6 +41,10 @@ public class ClassificationService {
     public Classification confirmIncidentClassification(UUID classificationId) {
 
         Classification classification = classificationRepo.findById(classificationId).orElseThrow(()->new ClassificationNotFoundException("Classification not found with id: " + classificationId));
+
+        if(classification.getClassificationStatus() != ClassificationStatus.PENDING){
+            throw new ActionNotAllowedException("Classification with id: " + classificationId + " is not in PENDING status and cannot be confirmed.");
+        }
 
         classification.setClassificationStatus(ClassificationStatus.CONFIRMED);
         classification.setUpdatedAt(Instant.now(clock));
