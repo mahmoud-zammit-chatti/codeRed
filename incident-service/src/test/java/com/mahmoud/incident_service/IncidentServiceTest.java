@@ -3,10 +3,7 @@ package com.mahmoud.incident_service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mahmoud.incident_service.DTOs.CreateIncidentRequestDTO;
 import com.mahmoud.incident_service.DTOs.IncidentMapper;
-import com.mahmoud.incident_service.DTOs.IncidentResponseDTO;
-import com.mahmoud.incident_service.Exceptions.ActionNotAllowedException;
 import com.mahmoud.incident_service.Models.OutboxEvent;
 import com.mahmoud.incident_service.Models.classification.Classification;
 import com.mahmoud.incident_service.Models.classification.ClassificationStatus;
@@ -17,13 +14,15 @@ import com.mahmoud.incident_service.Repositories.OutboxRepo;
 import com.mahmoud.incident_service.Services.IncidentService;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
 import com.mahmoud.schemas.events.IncidentCreatedEvent;
-import org.aspectj.lang.annotation.Before;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
@@ -33,7 +32,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +40,10 @@ public class IncidentServiceTest {
     @Mock
     private IncidentRepo incidentRepo;
 
-
+    @Mock
+    Message mockMessage;
+    @Mock
+    private MessageProperties mockProperties;
 
     @Mock
     private ClassificationRepo classificationRepo;
@@ -75,6 +76,7 @@ public class IncidentServiceTest {
     void handleClassificationWhenIncidentIsResolved() {
         Incident resolvedIncident = createIncident(Severity.HIGH, Type.OTHER, IncidentClassificationStatus.CLASSIFIED, Status.RESOLVED);
 
+
         IncidentAiEvalEvent event = new IncidentAiEvalEvent();
         event.setId(UUID.randomUUID());
         event.setIncidentId(resolvedIncident.getId());
@@ -84,7 +86,12 @@ public class IncidentServiceTest {
 
         when(incidentRepo.findById(resolvedIncident.getId())).thenReturn(Optional.of(resolvedIncident));
 
-        assertDoesNotThrow(()-> incidentService.handleAiEvaluation(event));
+
+        when(mockMessage.getMessageProperties()).thenReturn(mockProperties);
+
+
+
+        assertDoesNotThrow(()-> incidentService.handleAiEvaluation(event,mockMessage));
         verify(incidentRepo).findById(resolvedIncident.getId());
         verify(classificationRepo, never()).save(any());
         verify(incidentRepo, never()).save(
@@ -102,6 +109,8 @@ public class IncidentServiceTest {
 
 
         when(incidentRepo.findById(unresolvedIncident.getId())).thenReturn(Optional.of(unresolvedIncident));
+        when(mockMessage.getMessageProperties()).thenReturn(mockProperties);
+
 
         IncidentAiEvalEvent event = new IncidentAiEvalEvent();
         event.setId(UUID.randomUUID());
@@ -122,7 +131,8 @@ public class IncidentServiceTest {
                 .updatedAt(randomTime2)
                 .build();
 
-        assertDoesNotThrow(()-> incidentService.handleAiEvaluation(event));
+
+        assertDoesNotThrow(()-> incidentService.handleAiEvaluation(event,mockMessage));
 
         verify(incidentRepo).findById(unresolvedIncident.getId());
         verify(classificationRepo).save(argThat(c->
@@ -161,7 +171,7 @@ public class IncidentServiceTest {
         when(outboxRepo.findBySentFalseOrderByCreatedAtAsc()).thenReturn(java.util.List.of(outboxEvent));
 
         incidentService.relayOutboxEvents();
-        verify(amqpTemplate).convertAndSend(eq("test.exchange"),eq("incident.created"), any(IncidentCreatedEvent.class));
+        verify(amqpTemplate).convertAndSend(eq("test.exchange"),eq("incident.created"), any(IncidentCreatedEvent.class),any(MessagePostProcessor.class));
         verify(outboxRepo).save(argThat(OutboxEvent::isSent));
 
     }

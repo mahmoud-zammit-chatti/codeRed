@@ -82,6 +82,7 @@ public class IncidentService {
                     .payload(ObjectMapper.writeValueAsString(incidentCreatedEvent))
                     .createdAt(Instant.now(buisnessClock))
                     .correlationId(correlationId)
+                    .incidentRef(savedIncident)
                     .sent(false)
                     .build();
             outboxRepo.save(outboxEvent);

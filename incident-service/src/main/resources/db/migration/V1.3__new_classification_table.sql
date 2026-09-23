@@ -6,7 +6,7 @@ CREATE TABLE classification(
     suggested_type VARCHAR(255) NOT NULL
         CHECK (suggested_type IN ('FIRE', 'CRIME', 'MEDICAL', 'ACCIDENT', 'OTHER')),
     confidence  INT,
-    model_version float,
+    model_version varchar(255),
     classification_status varchar(255) NOT NULL DEFAULT 'PENDING'
         CHECK (classification_status IN ('PENDING', 'CONFIRMED', 'EDITEDANDCONFIRMED')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

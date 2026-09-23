@@ -3,5 +3,5 @@ CREATE TABLE outbox_event (
                           title VARCHAR(255) NOT NULL,
                           payload TEXT,
                           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          is_sent BOOLEAN NOT NULL DEFAULT FALSE
+                          sent BOOLEAN NOT NULL DEFAULT FALSE
 );
