@@ -5,7 +5,7 @@ import com.mahmoud.ai_service.Exceptions.IncidentEvaluationException;
 import com.mahmoud.ai_service.Models.AiEval;
 import com.mahmoud.ai_service.Repositories.AiEvalRepo;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
-import com.mahmoud.schemas.events.IncidentCreatedEvent;
+import com.mahmoud.schemas.events.ClassificationRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -47,8 +47,8 @@ public class IncidentClassificationService {
 
 
 
-    @RabbitListener(queues = "incident-creation-queue")
-    public void handleIncidentCreation(IncidentCreatedEvent event, Message message) {
+    @RabbitListener(queues = "classification.requested.queue")
+    public void handleIncidentCreation(ClassificationRequest event, Message message) {
 
         String correlationId = message.getMessageProperties().getHeader("x-correlation-id");
         String resolvedCorrelationId = correlationId != null ? correlationId : UUID.randomUUID().toString();
@@ -58,6 +58,8 @@ public class IncidentClassificationService {
         try{
 
         IncidentAiEvalEvent incidentAiEvalEvent = evaluateIncident(event.getId(),event.getDescription());
+            log.info("trigger type of incident: {}", event.getTrigger());
+        incidentAiEvalEvent.setTrigger(event.getTrigger());
 
         MessagePostProcessor addCorrelationHeader = outboundMessage -> {
             outboundMessage.getMessageProperties().setHeader("x-correlation-id", resolvedCorrelationId);
@@ -116,6 +118,7 @@ public class IncidentClassificationService {
         // Extract fields from the model response and map them into the event.
         IncidentAiEvalEvent event = new IncidentAiEvalEvent();
         event.setIncidentId(id);
+
         try {
             String json = extractJsonObject(response);
             JsonNode root = objectMapper.readTree(json);

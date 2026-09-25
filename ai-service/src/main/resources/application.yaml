@@ -46,12 +46,10 @@ spring:
         model: ${GROQ_MODEL}
 
 EXCHANGE_NAME: incident.exchange
-INCIDENT_CREATION_QUEUE: incident-creation-queue
-INCIDENT_CREATED_BINDING_KEY: incident.created
+CLASSIFICATION_REQUESTED_QUEUE: classification.requested.queue
+CLASSIFICATION_REQUESTED_BINDING_KEY: classification.requested
 INCIDENT_EVALUATED_ROUTING_KEY: incident.classified
 
 INCIDENT_DLX_EXCHANGE_NAME: incident.dlx
-INCIDENT_DLX_QUEUE_NAME: incident.created.dlq
-INCIDENT_DLX_ROUTING_KEY: incident.created.dead
-
-
+INCIDENT_DLX_QUEUE_NAME: classification.requested.dlq
+INCIDENT_DLX_ROUTING_KEY: classification.requested.dead

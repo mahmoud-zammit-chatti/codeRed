@@ -16,10 +16,10 @@ public class RabbitMQConfig {
 
     @Value("${EXCHANGE_NAME}")
     String EXCHANGE_NAME;
-    @Value("${INCIDENT_CREATION_QUEUE}")
-    String INCIDENT_CREATION_QUEUE;
-    @Value("${INCIDENT_CREATED_BINDING_KEY}")
-    String INCIDENT_CREATED_BINDING_KEY;
+    @Value("${CLASSIFICATION_REQUESTED_QUEUE}")
+    String CLASSIFICATION_REQUESTED_QUEUE;
+    @Value("${CLASSIFICATION_REQUESTED_BINDING_KEY}")
+    String CLASSIFICATION_REQUESTED_BINDING_KEY;
     @Value("${INCIDENT_DLX_EXCHANGE_NAME}")
     String INCIDENT_DLX_EXCHANGE_NAME;
     @Value("${INCIDENT_DLX_ROUTING_KEY}")
@@ -42,7 +42,7 @@ public class RabbitMQConfig {
     @Bean
 
     public Queue incidentCreationQueue(){
-        return QueueBuilder.durable(INCIDENT_CREATION_QUEUE)
+        return QueueBuilder.durable(CLASSIFICATION_REQUESTED_QUEUE)
                 .withArgument("x-dead-letter-exchange", INCIDENT_DLX_EXCHANGE_NAME)
                 .withArgument("x-dead-letter-routing-key", INCIDENT_DLX_ROUTING_KEY)
                 .build();
@@ -68,7 +68,7 @@ public class RabbitMQConfig {
         return  BindingBuilder
                 .bind(incidentCreationQueue())
                 .to(directExchange())
-                .with(INCIDENT_CREATED_BINDING_KEY);
+                .with(CLASSIFICATION_REQUESTED_BINDING_KEY);
     }
 
     @Bean
