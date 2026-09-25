@@ -21,6 +21,9 @@
     },
     "confidenceScore": {
       "type": "integer"
+    },
+    "trigger": {
+      "type": "string"
     }
   },
   "required": [
@@ -28,6 +31,7 @@
     "incidentId",
     "evaluation",
     "recommendedAction",
-    "confidenceScore"
+    "confidenceScore",
+    "trigger"
   ]
 }

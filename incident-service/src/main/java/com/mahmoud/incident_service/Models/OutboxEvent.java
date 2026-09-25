@@ -1,6 +1,7 @@
 package com.mahmoud.incident_service.Models;
 
 
+import com.mahmoud.incident_service.Models.classification.Trigger;
 import com.mahmoud.incident_service.Models.incident.Incident;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -27,6 +28,9 @@ public class OutboxEvent {
     private String payload;
 
     private Instant createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private Trigger trigger;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_ref")

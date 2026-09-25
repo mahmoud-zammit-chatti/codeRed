@@ -25,7 +25,7 @@ public class ClassificationController {
         return ResponseEntity.ok(classificationService.getAllPendingIncidentClassifications(UUID.fromString(incidentId)));
     }
 
-    @PutMapping("/confirm-classification")
+    @PostMapping("/confirm-classification")
     public ResponseEntity<Classification> confirmClassification(@RequestParam("classificationId") String classificationId) {
 
         return ResponseEntity.ok(classificationService.confirmIncidentClassification(UUID.fromString(classificationId)));
@@ -34,6 +34,12 @@ public class ClassificationController {
     @PutMapping("/edit-confirm-classification")
     public ResponseEntity<Classification> editClassification(@RequestParam("classificationId") String classificationId, @RequestBody ManualEditClassificationDTO request) {
         return ResponseEntity.ok(classificationService.editAndConfirmClassification(UUID.fromString(classificationId), request));
+    }
+
+    @PostMapping("/request-classification")
+    public ResponseEntity<Void> requestClassification(@RequestParam("incidentId") String incidentId) {
+        classificationService.requestManualClassification(UUID.fromString(incidentId));
+        return ResponseEntity.ok().build();
     }
 
 }

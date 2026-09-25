@@ -1,20 +1,29 @@
 package com.mahmoud.incident_service.Services;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mahmoud.incident_service.DTOs.IncidentMapper;
 import com.mahmoud.incident_service.DTOs.ManualEditClassificationDTO;
 import com.mahmoud.incident_service.Exceptions.ActionNotAllowedException;
 import com.mahmoud.incident_service.Exceptions.ClassificationNotFoundException;
 import com.mahmoud.incident_service.Exceptions.IncidentNotFoundException;
+import com.mahmoud.incident_service.Models.OutboxEvent;
 import com.mahmoud.incident_service.Models.classification.Classification;
 import com.mahmoud.incident_service.Models.classification.ClassificationStatus;
+import com.mahmoud.incident_service.Models.classification.Trigger;
 import com.mahmoud.incident_service.Models.incident.Incident;
 import com.mahmoud.incident_service.Models.incident.IncidentClassificationStatus;
 import com.mahmoud.incident_service.Models.incident.Severity;
 import com.mahmoud.incident_service.Models.incident.Type;
 import com.mahmoud.incident_service.Repositories.ClassificationRepo;
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
+import com.mahmoud.incident_service.Repositories.OutboxRepo;
+import com.mahmoud.schemas.events.ClassificationRequest;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.time.Clock;
 import java.time.Instant;
@@ -26,11 +35,16 @@ public class ClassificationService {
     private final ClassificationRepo classificationRepo;
     private final IncidentRepo incidentRepo;
     private final Clock clock ;
+    private final IncidentMapper incidentMapper;
+    private final OutboxRepo outboxRepo;
+    private ObjectMapper ObjectMapper = new ObjectMapper();
 
-    public ClassificationService(ClassificationRepo classificationRepo, IncidentRepo incidentRepo, Clock clock) {
+    public ClassificationService(ClassificationRepo classificationRepo, IncidentRepo incidentRepo, Clock clock, IncidentMapper incidentMapper, OutboxRepo outboxRepo) {
         this.classificationRepo = classificationRepo;
         this.incidentRepo = incidentRepo;
         this.clock = clock;
+        this.incidentMapper = incidentMapper;
+        this.outboxRepo = outboxRepo;
     }
 
     public List<Classification> getAllPendingIncidentClassifications(UUID incidentId) {
@@ -78,5 +92,31 @@ public class ClassificationService {
 
         return confirmIncidentClassification(classificationId);
     }
+
+    public void requestManualClassification(UUID incidentId){
+
+        Incident savedIncident = incidentRepo.findById(incidentId).orElseThrow(()->new IncidentNotFoundException("Incident not found with id: " + incidentId));
+
+        ClassificationRequest ClassificationRequest = incidentMapper.toClassificationRequest(savedIncident);
+        String correlationId = MDC.get("correlationId");
+        try {
+            OutboxEvent outboxEvent = OutboxEvent.builder()
+                    .title("Incident Created")
+                    .payload(ObjectMapper.writeValueAsString(ClassificationRequest))
+                    .createdAt(Instant.now(clock))
+                    .correlationId(correlationId)
+                    .incidentRef(savedIncident)
+                    .sent(false)
+                    .trigger(Trigger.MANUAL)
+                    .build();
+            outboxRepo.save(outboxEvent);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("error while building outbox payload: "+e);
+        }
+
+
+
+    }
+
 
 }

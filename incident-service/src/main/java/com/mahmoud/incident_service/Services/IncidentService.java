@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mahmoud.incident_service.Exceptions.ActionNotAllowedException;
 import com.mahmoud.incident_service.Models.*;
 import com.mahmoud.incident_service.Models.classification.Classification;
+import com.mahmoud.incident_service.Models.classification.Trigger;
 import com.mahmoud.incident_service.Models.incident.*;
 import com.mahmoud.incident_service.Repositories.ClassificationRepo;
 import com.mahmoud.incident_service.Repositories.OutboxRepo;
@@ -14,7 +15,7 @@ import com.mahmoud.incident_service.DTOs.CreateIncidentRequestDTO;
 import com.mahmoud.incident_service.DTOs.IncidentMapper;
 import com.mahmoud.incident_service.DTOs.IncidentResponseDTO;
 import com.mahmoud.incident_service.Exceptions.IncidentNotFoundException;
-import com.mahmoud.schemas.events.IncidentCreatedEvent;
+import com.mahmoud.schemas.events.ClassificationRequest;
 
 
 import com.mahmoud.incident_service.Repositories.IncidentRepo;
@@ -42,8 +43,8 @@ public class IncidentService {
 
     @Value("${EXCHANGE_NAME}")
     String EXCHANGE_NAME;
-    @Value("${INCIDENT_CREATED_ROUTING_KEY}")
-    String INCIDENT_CREATED_ROUTING_KEY;
+    @Value("${CLASSIFICATION_REQUESTED_ROUTING_KEY}")
+    String CLASSIFICATION_REQUESTED_ROUTING_KEY;
     @Value("${AI_CLASSIFICATION_QUEUE}")
     String AI_CLASSIFICATION_QUEUE;
     @Value("${MODEL_VERSION}")
@@ -75,15 +76,16 @@ public class IncidentService {
         //publish incident to RabbitMQ
 
         // build the payload for sending using shared DTO
-        IncidentCreatedEvent incidentCreatedEvent = incidentMapper.toIncidentCreatedEvent(savedIncident);
+        ClassificationRequest ClassificationRequest = incidentMapper.toClassificationRequest(savedIncident);
         try {
             OutboxEvent outboxEvent = OutboxEvent.builder()
                     .title("Incident Created")
-                    .payload(ObjectMapper.writeValueAsString(incidentCreatedEvent))
+                    .payload(ObjectMapper.writeValueAsString(ClassificationRequest))
                     .createdAt(Instant.now(buisnessClock))
                     .correlationId(correlationId)
                     .incidentRef(savedIncident)
                     .sent(false)
+                    .trigger(Trigger.AUTOMATIC)
                     .build();
             outboxRepo.save(outboxEvent);
         } catch (JsonProcessingException e) {
@@ -105,7 +107,8 @@ public class IncidentService {
         for (OutboxEvent row : pending) {
             try {
 
-                IncidentCreatedEvent event = mapper.readValue(row.getPayload(), IncidentCreatedEvent.class);
+                ClassificationRequest event = mapper.readValue(row.getPayload(), ClassificationRequest.class);
+                event.setTrigger(row.getTrigger().toString());
                 String correlationId = row.getCorrelationId() != null ? row.getCorrelationId() : UUID.randomUUID().toString();
 
                 MessagePostProcessor addCorrelationHeader = message -> {
@@ -113,7 +116,7 @@ public class IncidentService {
                     return message;
                 };
 
-                amqpTemplate.convertAndSend(EXCHANGE_NAME, INCIDENT_CREATED_ROUTING_KEY,event,addCorrelationHeader);
+                amqpTemplate.convertAndSend(EXCHANGE_NAME, CLASSIFICATION_REQUESTED_ROUTING_KEY,event,addCorrelationHeader);
                 row.setSent(true);
                 outboxRepo.save(row);
             } catch (Exception e) {
@@ -125,8 +128,9 @@ public class IncidentService {
 
 
 
+
   @RabbitListener(queues = "incident.classified.queue")
-    @Transactional
+  @Transactional
   public void handleAiEvaluation(IncidentAiEvalEvent event, Message message){
 
       String correlationId = message.getMessageProperties().getHeader("x-correlation-id");
@@ -146,10 +150,11 @@ public class IncidentService {
                   .incidentRef(incident)
                   .confidence(event.getConfidenceScore())
                   .modelVersion(MODEL_VERSION)
+                  .trigger(Trigger.valueOf(event.getTrigger().toUpperCase()))
                   .suggestedType(Type.valueOf(event.getRecommendedAction()))
                   .suggestedSeverity(Severity.valueOf(event.getEvaluation()))
                   .createdAt(Instant.now(buisnessClock))
-                  .updatedAt(null)
+                  .updatedAt(Instant.now(buisnessClock))
                   .build();
           classificationRepo.save(classification);
           incident.setClassificationStatus(IncidentClassificationStatus.PENDING_CONFIRMATION);

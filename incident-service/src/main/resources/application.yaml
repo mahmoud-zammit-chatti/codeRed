@@ -32,6 +32,7 @@ spring:
     url: jdbc:postgresql://localhost:5435/incident_db
     user: admin
     password: ${INCIDENT_DB_PASS}
+    clean-disabled: false
   docker:
     compose:
       enabled: false
@@ -48,4 +49,4 @@ management:
 EXCHANGE_NAME: incident.exchange
 AI_CLASSIFICATION_QUEUE: incident.classified.queue
 INCIDENT_CLASSIFIED_BINDING_KEY: incident.classified
-INCIDENT_CREATED_ROUTING_KEY: incident.created
+CLASSIFICATION_REQUESTED_ROUTING_KEY: classification.requested

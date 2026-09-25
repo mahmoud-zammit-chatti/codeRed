@@ -1,13 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "incident-created",
-  "title": "IncidentCreatedEvent",
+  "$id": "classification-request",
+  "title": "ClassificationRequest",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "incidentId": {
       "type": "string",
       "format": "uuid"
+    },
+    "trigger": {
+      "type": "string"
     },
     "id": {
       "type": "string",
@@ -44,6 +47,8 @@
     "type",
     "severity",
     "reportedBy",
-    "createdAt"
+    "createdAt",
+    "trigger",
+    "incidentId"
   ]
 }

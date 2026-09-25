@@ -13,7 +13,7 @@ import com.mahmoud.incident_service.Repositories.IncidentRepo;
 import com.mahmoud.incident_service.Repositories.OutboxRepo;
 import com.mahmoud.incident_service.Services.IncidentService;
 import com.mahmoud.schemas.events.IncidentAiEvalEvent;
-import com.mahmoud.schemas.events.IncidentCreatedEvent;
+import com.mahmoud.schemas.events.ClassificationRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -148,10 +148,10 @@ public class IncidentServiceTest {
     void relayOutboxEventsWhenSendingEvents() throws JsonProcessingException {
 
         ReflectionTestUtils.setField(incidentService, "EXCHANGE_NAME", "test.exchange");
-        ReflectionTestUtils.setField(incidentService, "INCIDENT_CREATED_ROUTING_KEY", "incident.created");
+        ReflectionTestUtils.setField(incidentService, "CLASSIFICATION_REQUESTED_ROUTING_KEY", "incident.created");
 
         Incident pendingIncident = createIncident(Severity.MEDIUM, Type.OTHER, IncidentClassificationStatus.PENDING_CLASSIFICATION, Status.PENDING);
-        IncidentCreatedEvent event = new IncidentCreatedEvent();
+        ClassificationRequest event = new ClassificationRequest();
         event.setId(UUID.randomUUID());
         event.setTitle("test");
         event.setDescription("test");
@@ -163,7 +163,7 @@ public class IncidentServiceTest {
 
         OutboxEvent outboxEvent = OutboxEvent.builder()
                         .id(UUID.randomUUID())
-                        .title("IncidentCreatedEvent")
+                        .title("ClassificationRequest")
                         .payload(ObjectMapper.writeValueAsString(event))
                         .createdAt(pendingIncident.getCreatedAt())
                         .sent(false)
@@ -171,7 +171,7 @@ public class IncidentServiceTest {
         when(outboxRepo.findBySentFalseOrderByCreatedAtAsc()).thenReturn(java.util.List.of(outboxEvent));
 
         incidentService.relayOutboxEvents();
-        verify(amqpTemplate).convertAndSend(eq("test.exchange"),eq("incident.created"), any(IncidentCreatedEvent.class),any(MessagePostProcessor.class));
+        verify(amqpTemplate).convertAndSend(eq("test.exchange"),eq("incident.created"), any(ClassificationRequest.class),any(MessagePostProcessor.class));
         verify(outboxRepo).save(argThat(OutboxEvent::isSent));
 
     }

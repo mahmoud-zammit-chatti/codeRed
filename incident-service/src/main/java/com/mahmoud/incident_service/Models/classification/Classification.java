@@ -33,6 +33,10 @@ public class Classification {
 
     private Integer confidence;
 
+    @Enumerated(EnumType.STRING)
+    private Trigger trigger;
+
+
     private String modelVersion; // version of the model used for classification
 
     @Enumerated(EnumType.STRING)

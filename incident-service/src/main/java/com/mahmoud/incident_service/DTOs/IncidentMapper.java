@@ -2,7 +2,7 @@ package com.mahmoud.incident_service.DTOs;
 
 
 import com.mahmoud.incident_service.Models.incident.Incident;
-import com.mahmoud.schemas.events.IncidentCreatedEvent;
+import com.mahmoud.schemas.events.ClassificationRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
@@ -23,6 +23,6 @@ public interface IncidentMapper {
 
     IncidentResponseDTO toResponse(Incident incident);
 
-    IncidentCreatedEvent toIncidentCreatedEvent(Incident incident);
+    ClassificationRequest toClassificationRequest(Incident incident);
 
 }
