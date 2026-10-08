@@ -1,5 +1,26 @@
 services:
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8180
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${DOCKER_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: info
+    ports:
+        - "8180:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8180/health/ready" ]
+      interval: 15s
+      timeout: 2s
+      retries: 15
+    command:
+      - start-dev
+    volumes:
+      - keycloak-data:/opt/keycloak/data
   rabbitmq:
     image: rabbitmq:3-management
     container_name: codered-rabbitmq
@@ -135,3 +156,4 @@ volumes:
     incident-db-data:
     dispatch-db-data:
     ai-db-data:
+    keycloak-data:

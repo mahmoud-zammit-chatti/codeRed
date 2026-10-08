@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/codeRed.iml" filepath="$PROJECT_DIR$/.idea/codeRed.iml" />
-      <module fileurl="file://$PROJECT_DIR$/incident-service/incident-service.iml" filepath="$PROJECT_DIR$/incident-service/incident-service.iml" />
     </modules>
   </component>
 </project>
