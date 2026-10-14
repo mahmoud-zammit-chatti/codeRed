@@ -8,29 +8,31 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      default-filters:
-        - name: RequestSize
-          args:
-            maxSize: 5000000
-      routes:
-      - id: incident-service
-        uri: http://localhost:8081
-        predicates:
-          - Path=/api/incidents/**
-      - id: dispatch-service
-        uri: http://localhost:8082
-        predicates:
-           - Path=/api/dispatch/**
+      server:
+        webflux:
+          default-filters:
+            - name: RequestSize
+              args:
+                maxSize: 5000000
+          routes:
+          - id: incident-service
+            uri: http://localhost:8081
+            predicates:
+              - Path=/api/incidents/**,/api/classification/**
+          - id: dispatch-service
+            uri: http://localhost:8082
+            predicates:
+               - Path=/api/dispatch/**
 
-      - id: ai-service
-        uri: http://localhost:8083
-        predicates:
-           - Path=/api/ai/**
+          - id: ai-service
+            uri: http://localhost:8083
+            predicates:
+               - Path=/api/ai/**
 
-      - id: notification-service
-        uri: http://localhost:8084
-        predicates:
-           - Path=/api/notifications/**
+          - id: notification-service
+            uri: http://localhost:8084
+            predicates:
+               - Path=/api/notifications/**
   security:
     oauth2:
       resourceserver:

@@ -31,6 +31,9 @@ public class Classification {
     @Enumerated(EnumType.STRING)
     private Type suggestedType;
 
+
+    private String confirmedBy; // agent who confirmed the classification
+
     private Integer confidence;
 
     @Enumerated(EnumType.STRING)

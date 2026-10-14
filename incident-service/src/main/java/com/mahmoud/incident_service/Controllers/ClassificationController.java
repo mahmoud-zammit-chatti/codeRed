@@ -20,23 +20,23 @@ public class ClassificationController {
         this.classificationService = classificationService;
     }
 
-    @GetMapping("/get-all-pending-classification")
+    @GetMapping("/protected/get-all-pending-classification")
     public ResponseEntity<List<Classification>> getAllPendingClassification(@RequestParam("incidentId") String incidentId) {
         return ResponseEntity.ok(classificationService.getAllPendingIncidentClassifications(UUID.fromString(incidentId)));
     }
 
-    @PostMapping("/confirm-classification")
+    @PostMapping("/protected/confirm-classification")
     public ResponseEntity<Classification> confirmClassification(@RequestParam("classificationId") String classificationId) {
 
         return ResponseEntity.ok(classificationService.confirmIncidentClassification(UUID.fromString(classificationId)));
     }
 
-    @PutMapping("/edit-confirm-classification")
+    @PutMapping("/protected/edit-confirm-classification")
     public ResponseEntity<Classification> editClassification(@RequestParam("classificationId") String classificationId, @RequestBody ManualEditClassificationDTO request) {
         return ResponseEntity.ok(classificationService.editAndConfirmClassification(UUID.fromString(classificationId), request));
     }
 
-    @PostMapping("/request-classification")
+    @PostMapping("/protected/request-classification")
     public ResponseEntity<Void> requestClassification(@RequestParam("incidentId") String incidentId) {
         classificationService.requestManualClassification(UUID.fromString(incidentId));
         return ResponseEntity.ok().build();
