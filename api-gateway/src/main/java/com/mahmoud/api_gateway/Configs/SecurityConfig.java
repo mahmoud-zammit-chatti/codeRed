@@ -56,6 +56,7 @@ public class SecurityConfig {
         return converter;
     }
 
+    //this is ok only for dev stage . needs to be controlled in production!!!!!!!!!!!!!!!
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
