@@ -24,8 +24,6 @@ public class CreateIncidentRequestDTO {
     private String location;
     @NotNull(message="Type is required")
     private Type type;
-    @NotBlank(message="Reported by is required")
-    @Pattern(regexp="^[0-9]{8}$", message="Reporter ID must be an 8-digit number")
-    private String reportedBy;
+
 
 }

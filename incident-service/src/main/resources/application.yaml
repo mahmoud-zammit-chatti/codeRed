@@ -48,7 +48,12 @@ management:
       exposure:
         include: health,info
 
-
+logging:
+  level:
+    org:
+      springframework:
+        security:
+          oauth2: TRACE
 
 
 EXCHANGE_NAME: incident.exchange

@@ -21,6 +21,7 @@ import com.mahmoud.incident_service.Repositories.IncidentRepo;
 import com.mahmoud.incident_service.Repositories.OutboxRepo;
 import com.mahmoud.schemas.events.ClassificationRequest;
 import org.slf4j.MDC;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,7 +53,7 @@ public class ClassificationService {
     }
 
     @Transactional
-    public Classification confirmIncidentClassification(UUID classificationId) {
+    public Classification confirmIncidentClassification(UUID classificationId, Jwt jwt) {
 
         Classification classification = classificationRepo.findById(classificationId).orElseThrow(()->new ClassificationNotFoundException("Classification not found with id: " + classificationId));
 
@@ -61,19 +62,22 @@ public class ClassificationService {
         }
 
         classification.setClassificationStatus(ClassificationStatus.CONFIRMED);
+        classification.setEdited(true);
+        classification.setConfirmedBy(jwt.getSubject());
         classification.setUpdatedAt(Instant.now(clock));
         Incident incident = incidentRepo.findById(classification.getIncidentRef().getId()).orElseThrow(()->new IncidentNotFoundException("Incident not found with id: " + classification.getIncidentRef().getId()));
         incident.setSeverity(classification.getSuggestedSeverity());
         incident.setType(classification.getSuggestedType());
         incident.setClassificationStatus(IncidentClassificationStatus.CLASSIFIED);
         incident.setUpdatedAt(Instant.now(clock));
+        incident.setAgentId(UUID.fromString(jwt.getSubject()));
         classificationRepo.save(classification);
         incidentRepo.save(incident);
         return classification;
     }
 
     @Transactional
-    public Classification editAndConfirmClassification(UUID classificationId, ManualEditClassificationDTO request){
+    public Classification editAndConfirmClassification(UUID classificationId, ManualEditClassificationDTO request, Jwt jwt){
         Classification classification = classificationRepo.findById(classificationId).orElseThrow(()->new ClassificationNotFoundException("Classification not found with id: " + classificationId));
         Incident incident = incidentRepo.findById(classification.getIncidentRef().getId()).orElseThrow(()->new IncidentNotFoundException("Incident not found with id: " + classification.getIncidentRef().getId()));
 
@@ -84,20 +88,22 @@ public class ClassificationService {
             classification.setSuggestedType(Type.valueOf( request.getSuggestedType()));
         }
         classification.setUpdatedAt(Instant.now(clock));
+        Classification editedClassification =  confirmIncidentClassification(classificationId, jwt);
         classification.setClassificationStatus(ClassificationStatus.EDITEDANDCONFIRMED);
         incident.setClassificationStatus(IncidentClassificationStatus.CLASSIFIED);
         incident.setUpdatedAt(Instant.now(clock));
         incidentRepo.save(incident);
         classificationRepo.save(classification);
 
-        return confirmIncidentClassification(classificationId);
+        return editedClassification;
     }
 
-    public void requestManualClassification(UUID incidentId){
+    public void requestManualClassification(UUID incidentId, Jwt jwt){
 
         Incident savedIncident = incidentRepo.findById(incidentId).orElseThrow(()->new IncidentNotFoundException("Incident not found with id: " + incidentId));
 
         ClassificationRequest ClassificationRequest = incidentMapper.toClassificationRequest(savedIncident);
+        ClassificationRequest.setRequestedBy(jwt.getSubject());
         String correlationId = MDC.get("correlationId");
         try {
             OutboxEvent outboxEvent = OutboxEvent.builder()

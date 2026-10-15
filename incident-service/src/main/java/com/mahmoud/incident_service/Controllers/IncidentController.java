@@ -3,6 +3,7 @@ package com.mahmoud.incident_service.Controllers;
 import com.mahmoud.incident_service.DTOs.CreateIncidentRequestDTO;
 import com.mahmoud.incident_service.DTOs.IncidentResponseDTO;
 import com.mahmoud.incident_service.Services.IncidentService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,13 +26,15 @@ public class IncidentController {
 
     @PreAuthorize("hasRole('AGENT')")
     @GetMapping("/protected/get-all-pending")
-    public ResponseEntity<ArrayList<IncidentResponseDTO>> getPendingIncident(@AuthenticationPrincipal Jwt jwt){
-        System.out.println(SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+    @SecurityRequirement(name = "Bearer Authentication")
+
+    public ResponseEntity<ArrayList<IncidentResponseDTO>> getPendingIncident(){
         return ResponseEntity.ok(incidentService.getAllPendingIncidents());
     }
 
     @PostMapping("/public/create")
-    public ResponseEntity<IncidentResponseDTO> createIncident(@Valid @RequestBody CreateIncidentRequestDTO request){
-        return ResponseEntity.ok(incidentService.createIncident(request));
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<IncidentResponseDTO> createIncident(@Valid @RequestBody CreateIncidentRequestDTO request, @AuthenticationPrincipal Jwt jwt){
+        return ResponseEntity.ok(incidentService.createIncident(request, jwt));
     }
 }

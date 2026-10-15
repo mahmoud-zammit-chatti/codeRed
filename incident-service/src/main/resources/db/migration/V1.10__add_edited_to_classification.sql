@@ -1,0 +1,2 @@
+ALTER TABLE classification
+    ADD COLUMN edited BOOLEAN NOT NULL DEFAULT FALSE;

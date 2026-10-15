@@ -34,6 +34,9 @@ public class Classification {
 
     private String confirmedBy; // agent who confirmed the classification
 
+    @Builder.Default
+    private boolean edited = false;
+
     private Integer confidence;
 
     @Enumerated(EnumType.STRING)

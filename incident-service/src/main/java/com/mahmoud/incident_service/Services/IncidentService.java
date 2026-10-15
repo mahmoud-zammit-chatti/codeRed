@@ -28,6 +28,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,16 +68,19 @@ public class IncidentService {
     }
 
     @Transactional
-    public IncidentResponseDTO createIncident(CreateIncidentRequestDTO request){
+    public IncidentResponseDTO createIncident(CreateIncidentRequestDTO request, Jwt jwt){
         Incident incident = incidentMapper.toEntity(request);
         incident.setCreatedAt(Instant.now(buisnessClock));
         incident.setClassificationStatus(IncidentClassificationStatus.PENDING_CLASSIFICATION);
+        incident.setReportedBy(jwt.getSubject());
         Incident savedIncident = incidentRepo.save(incident);
         String correlationId = MDC.get("correlationId");
         //publish incident to RabbitMQ
 
         // build the payload for sending using shared DTO
         ClassificationRequest ClassificationRequest = incidentMapper.toClassificationRequest(savedIncident);
+        ClassificationRequest.setRequestedBy("SYSTEM");
+        ClassificationRequest.setReportedBy(jwt.getSubject());
         try {
             OutboxEvent outboxEvent = OutboxEvent.builder()
                     .title("Incident Created")
@@ -91,10 +95,6 @@ public class IncidentService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("error while building outbox payload: "+e);
         }
-
-
-        
-
         return incidentMapper.toResponse(savedIncident);
     }
 

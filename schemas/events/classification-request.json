@@ -34,6 +34,13 @@
     "reportedBy": {
       "type": "string"
     },
+    "requestedBy": {
+      "type": "string"
+    },
+    "edited": {
+      "type": "boolean",
+      "default": false
+    },
     "createdAt": {
       "type": "string",
       "format": "date-time"
@@ -47,6 +54,7 @@
     "type",
     "severity",
     "reportedBy",
+    "requestedBy",
     "createdAt",
     "trigger",
     "incidentId"

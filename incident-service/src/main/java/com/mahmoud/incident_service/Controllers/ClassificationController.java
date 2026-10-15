@@ -6,7 +6,11 @@ import java.util.UUID;
 
 import com.mahmoud.incident_service.DTOs.ManualEditClassificationDTO;
 import com.mahmoud.incident_service.Services.ClassificationService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import com.mahmoud.incident_service.Models.classification.Classification;
@@ -20,25 +24,34 @@ public class ClassificationController {
         this.classificationService = classificationService;
     }
 
+    @PreAuthorize("hasRole('AGENT')")
     @GetMapping("/protected/get-all-pending-classification")
+    @SecurityRequirement(name = "Bearer Authentication")
+
     public ResponseEntity<List<Classification>> getAllPendingClassification(@RequestParam("incidentId") String incidentId) {
         return ResponseEntity.ok(classificationService.getAllPendingIncidentClassifications(UUID.fromString(incidentId)));
     }
 
+    @PreAuthorize("hasRole('AGENT')")
     @PostMapping("/protected/confirm-classification")
-    public ResponseEntity<Classification> confirmClassification(@RequestParam("classificationId") String classificationId) {
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<Classification> confirmClassification(@RequestParam("classificationId") String classificationId, @AuthenticationPrincipal Jwt jwt) {
 
-        return ResponseEntity.ok(classificationService.confirmIncidentClassification(UUID.fromString(classificationId)));
+        return ResponseEntity.ok(classificationService.confirmIncidentClassification(UUID.fromString(classificationId),jwt));
     }
 
+    @PreAuthorize("hasRole('AGENT')")
     @PutMapping("/protected/edit-confirm-classification")
-    public ResponseEntity<Classification> editClassification(@RequestParam("classificationId") String classificationId, @RequestBody ManualEditClassificationDTO request) {
-        return ResponseEntity.ok(classificationService.editAndConfirmClassification(UUID.fromString(classificationId), request));
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<Classification> editClassification(@RequestParam("classificationId") String classificationId, @RequestBody ManualEditClassificationDTO request, @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(classificationService.editAndConfirmClassification(UUID.fromString(classificationId), request, jwt));
     }
 
+    @PreAuthorize("hasRole('AGENT')")
     @PostMapping("/protected/request-classification")
-    public ResponseEntity<Void> requestClassification(@RequestParam("incidentId") String incidentId) {
-        classificationService.requestManualClassification(UUID.fromString(incidentId));
+    @SecurityRequirement(name = "Bearer Authentication")
+    public ResponseEntity<Void> requestClassification(@RequestParam("incidentId") String incidentId, @AuthenticationPrincipal Jwt jwt) {
+        classificationService.requestManualClassification(UUID.fromString(incidentId),jwt);
         return ResponseEntity.ok().build();
     }
 
