@@ -25,8 +25,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: ${RABBITMQ_USER}
-    password: ${RABBITMQ_PASS}
+    username: ${RABBITMQ_INCIDENT_SERVICE_USERNAME}
+    password: ${RABBITMQ_INCIDENT_SERVICE_PASSWORD}
   sql:
     init:
       mode: always
