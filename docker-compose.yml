@@ -21,6 +21,8 @@ services:
       - start-dev
     volumes:
       - keycloak-data:/opt/keycloak/data
+    networks:
+      - identity
   rabbitmq:
     image: rabbitmq:3-management
     container_name: codered-rabbitmq
@@ -35,6 +37,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - broker
 
   api-gateway:
     build: ./api-gateway
@@ -45,6 +49,9 @@ services:
       - ai-service
       - incident-service
       - notification-service
+    networks:
+      - edge
+      - identity
 
   incident-db:
     image: postgres:18-alpine
@@ -61,6 +68,8 @@ services:
       - POSTGRES_DB=incident_db
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=${INCIDENT_DB_PASS}
+    networks:
+      - incident-db-net
 
   incident-service:
     build:
@@ -77,6 +86,11 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASS}
+    networks:
+      - edge
+      - broker
+      - incident-db-net
+      - identity
   dispatch-db:
     image: postgres:18-alpine
     volumes:
@@ -92,6 +106,8 @@ services:
       - POSTGRES_DB=dispatch_db
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=${DISPATCH_DB_PASS}
+    networks:
+      - dispatch-db-net
 
 
 
@@ -108,6 +124,10 @@ services:
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASS}
     ports:
       - "8082:8082"
+    networks:
+      - edge
+      - broker
+      - dispatch-db-net
 
   ai-db:
     image: postgres:18-alpine
@@ -124,13 +144,15 @@ services:
       - POSTGRES_DB=ai_db
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=${AI_DB_PASS}
+    networks:
+      - ai-db-net
 
   ai-service:
     build:
         context: .
-        dockerfile: ai-service/Dockerfile 
-    ports:
-      - "8083:8083"
+        dockerfile: ai-service/Dockerfile
+    expose:
+      - "8083"
     depends_on:
       - ai-db
     environment: # PROD: Inject cleanly here
@@ -143,6 +165,9 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - GROQ_BASE_URL=${GROQ_BASE_URL}
       - GROQ_MODEL=${GROQ_MODEL}
+    networks:
+      - broker
+      - ai-db-net
   notification-service:
     build: ./notification-service
     ports:
@@ -151,9 +176,26 @@ services:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASS}
+    networks:
+      - edge
+      - broker
 
 volumes:
     incident-db-data:
     dispatch-db-data:
     ai-db-data:
     keycloak-data:
+
+networks:
+  edge:
+    driver: bridge
+  broker:
+    driver: bridge
+  incident-db-net:
+    driver: bridge
+  dispatch-db-net:
+    driver: bridge
+  ai-db-net:
+    driver: bridge
+  identity:
+    driver: bridge
