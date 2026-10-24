@@ -1,0 +1,72 @@
+server:
+  port: 8000
+  compression:
+    enabled: true
+
+spring:
+  ssl:
+    bundle:
+      jks:
+        incident-client:
+          keystore:
+            location: file:/certs/gateway-keystore.p12
+            password: ${GATEWAY_TLS_KEYSTORE_PASSWORD}
+            type: PKCS12
+          truststore:
+            location: file:/certs/codered-truststore.p12
+            password: ${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+            type: PKCS12
+
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            ssl:
+              ssl-bundle: incident-client
+          default-filters:
+            - name: RequestSize
+              args:
+                maxSize: 5000000
+          routes:
+            - id: incident-service
+              uri: https://incident-service:8081
+              predicates:
+                - Path=/api/incidents/**,/api/classification/**
+            - id: dispatch-service
+              uri: http://dispatch-service:8082
+              predicates:
+                - Path=/api/dispatch/**
+
+
+
+            - id: notification-service
+              uri: http://notification-service:8084
+              predicates:
+                - Path=/api/notifications/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/code-red
+          jwk-set-uri: http://keycloak:8080/realms/code-red/protocol/openid-connect/certs
+
+
+management:
+  endpoint:
+    gateway:
+      access: unrestricted
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG

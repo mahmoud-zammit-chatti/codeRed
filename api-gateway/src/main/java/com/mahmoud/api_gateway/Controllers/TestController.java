@@ -1,4 +1,4 @@
-package com.mahmoud.api_gateway.Configs.Controllers;
+package com.mahmoud.api_gateway.Controllers;
 
 
 import org.springframework.security.access.prepost.PreAuthorize;

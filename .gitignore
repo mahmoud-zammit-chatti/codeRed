@@ -5,3 +5,4 @@
 *.class
 **/mvnw.cmd
 docs/
+pki/

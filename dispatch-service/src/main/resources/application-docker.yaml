@@ -1,0 +1,11 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/code-red
+          jwk-set-uri: http://keycloak:8080/realms/code-red/protocol/openid-connect/certs
+  datasource:
+    url: jdbc:postgresql://dispatch-db:5432/dispatch_db
+    username: admin
+    password: ${DISPATCH_DB_PASS}

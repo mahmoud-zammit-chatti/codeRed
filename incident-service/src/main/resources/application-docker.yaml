@@ -1,0 +1,38 @@
+server:
+  port: 8081
+  ssl:
+      enabled: true
+      key-store: file:/certs/incident-service-keystore.p12
+      key-store-type: PKCS12
+      key-store-password: ${INCIDENT_TLS_KEYSTORE_PASSWORD}
+      trust-store: file:/certs/codered-truststore.p12
+      trust-store-type: PKCS12
+      trust-store-password: ${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+      client-auth: need
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keycloak advertises localhost:8180 in the current development setup,
+          # while the container fetches the signing keys through Docker DNS.
+          issuer-uri: http://localhost:8180/realms/code-red
+          jwk-set-uri: http://keycloak:8080/realms/code-red/protocol/openid-connect/certs
+  datasource:
+    url: jdbc:postgresql://incident-db:5432/incident_db
+    username: admin
+    password: ${INCIDENT_DB_PASS}
+  rabbitmq:
+    host: rabbitmq
+    port: 5671
+    ssl:
+      enabled: true
+      trust-store: file:/certs/codered-truststore.p12
+      trust-store-type: PKCS12
+      trust-store-password: ${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+      validate-server-certificate: true
+      verify-hostname: true
+  flyway:
+    url: jdbc:postgresql://incident-db:5432/incident_db
+    user: admin
+    password: ${INCIDENT_DB_PASS}

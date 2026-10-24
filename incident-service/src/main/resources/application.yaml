@@ -1,5 +1,14 @@
 server:
   port: 8081
+  ssl:
+      enabled: true
+      key-store: file:/home/niri/codeRed/pki/incident-service/incident-service-keystore.p12
+      key-store-type: PKCS12
+      key-store-password: ${INCIDENT_TLS_KEYSTORE_PASSWORD}
+      trust-store:  file:/home/niri/codeRed/pki/ca/codered-truststore.p12
+      trust-store-type: PKCS12
+      trust-store-password: ${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+      client-auth: need
 spring:
   security:
     oauth2:
@@ -24,9 +33,16 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   rabbitmq:
     host: localhost
-    port: 5672
+    port: 5671
     username: ${RABBITMQ_INCIDENT_SERVICE_USERNAME}
     password: ${RABBITMQ_INCIDENT_SERVICE_PASSWORD}
+    ssl:
+      enabled: true
+      trust-store: file:/home/niri/codeRed/pki/ca/codered-truststore.p12
+      trust-store-type: PKCS12
+      trust-store-password: ${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+      validate-server-certificate: true
+      verify-hostname: true
   sql:
     init:
       mode: always

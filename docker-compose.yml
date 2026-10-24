@@ -11,7 +11,7 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_LOG_LEVEL: info
     ports:
-        - "8180:8080"
+        - "8180:8080" # keeping this accessible even in prod for clients
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8180/health/ready" ]
       interval: 15s
@@ -27,11 +27,17 @@ services:
     image: rabbitmq:3-management
     container_name: codered-rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5671:5671" # AMQP over TLS
+      - "15672:15672" #should be restricted only to admins in system prod(not any type of users even agents)
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./pki/ca/ca.crt:/certs/ca.crt:ro
+      - ./pki/rabbitmq/rabbitmq.crt:/certs/rabbitmq.crt:ro
+      - ./pki/rabbitmq/rabbitmq.key:/certs/rabbitmq.key:ro
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 10s
@@ -43,7 +49,10 @@ services:
   api-gateway:
     build: ./api-gateway
     ports:
-      - "8080:8080"
+      - "8000:8000" #should always be accessible from outside in prod
+    volumes:
+      - ./pki/gateway/gateway-keystore.p12:/certs/gateway-keystore.p12:ro
+      - ./pki/ca/codered-truststore.p12:/certs/codered-truststore.p12:ro
     depends_on:
       - dispatch-service
       - ai-service
@@ -52,13 +61,18 @@ services:
     networks:
       - edge
       - identity
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - GATEWAY_TLS_KEYSTORE_PASSWORD=${GATEWAY_TLS_KEYSTORE_PASSWORD}
+      - INCIDENT_TLS_TRUSTSTORE_PASSWORD=${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+
 
   incident-db:
     image: postgres:18-alpine
     volumes:
       - incident-db-data:/var/lib/postgresql
     ports:
-        - "5435:5432"
+        - "5435:5432"  #should not be accessible from outside in prod
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U admin -d incident_db" ]
       interval: 5s
@@ -76,16 +90,25 @@ services:
       context: .
       dockerfile: incident-service/Dockerfile
     ports:
-      - "8081:8081"
+      - "8081:8081" #should not be accessible from outside in prod, this line should be removed in prod
+    expose:
+      - "8081" #should not be accessible from outside in prod
     depends_on:
       - incident-db
+    volumes:
+      - ./pki/incident-service/incident-service-keystore.p12:/certs/incident-service-keystore.p12:ro
+      - ./pki/ca/codered-truststore.p12:/certs/codered-truststore.p12:ro
     environment: # PROD: Inject cleanly here
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://incident-db:5432/incident_db # Standard internal port 5432
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=${INCIDENT_DB_PASS}
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
-      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASS}
+      - SPRING_FLYWAY_USERNAME=admin
+      - SPRING_FLYWAY_PASSWORD=${INCIDENT_DB_PASS}
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_INCIDENT_SERVICE_USERNAME}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_INCIDENT_SERVICE_PASSWORD}
+      - MODEL_VERSION=${MODEL_VERSION}
+      - INCIDENT_TLS_KEYSTORE_PASSWORD=${INCIDENT_TLS_KEYSTORE_PASSWORD}
+      - INCIDENT_TLS_TRUSTSTORE_PASSWORD=${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
     networks:
       - edge
       - broker
@@ -96,7 +119,7 @@ services:
     volumes:
       - dispatch-db-data:/var/lib/postgresql
     ports:
-      - "5433:5432"
+      - "5433:5432"  #should not be accessible from outside in prod
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U admin -d dispatch_db" ]
       interval: 5s
@@ -123,7 +146,7 @@ services:
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASS}
     ports:
-      - "8082:8082"
+      - "8082:8082" #should not be accessible from outside in prod
     networks:
       - edge
       - broker
@@ -134,7 +157,7 @@ services:
     volumes:
       - ai-db-data:/var/lib/postgresql
     ports:
-      - "5434:5432"
+      - "5434:5432" #should not be accessible from outside in prod
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U admin -d ai_db" ]
       interval: 5s
@@ -152,16 +175,21 @@ services:
         context: .
         dockerfile: ai-service/Dockerfile
     expose:
-      - "8083"
+      - "8083" #should not be accessible from outside in prod
     depends_on:
       - ai-db
+    volumes:
+      - ./pki/ca/codered-truststore.p12:/certs/codered-truststore.p12:ro
     environment: # PROD: Inject cleanly here
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ai-db:5432/ai_db # Standard internal port 5432
+      - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=${AI_DB_PASS}
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
-      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASS}
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_AI_SERVICE_USERNAME}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_AI_SERVICE_PASSWORD}
+      - INCIDENT_TLS_TRUSTSTORE_PASSWORD=${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+      - SPRING_FLYWAY_USERNAME=admin
+      - SPRING_FLYWAY_PASSWORD=${AI_DB_PASS}
+      - MODEL_VERSION=${MODEL_VERSION}
       - GROQ_API_KEY=${GROQ_API_KEY}
       - GROQ_BASE_URL=${GROQ_BASE_URL}
       - GROQ_MODEL=${GROQ_MODEL}
@@ -185,6 +213,8 @@ volumes:
     dispatch-db-data:
     ai-db-data:
     keycloak-data:
+    rabbitmq-data:
+
 
 networks:
   edge:

@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://ai-db:5432/ai_db
+  rabbitmq:
+    host: rabbitmq
+    port: 5671
+    ssl:
+      enabled: true
+      trust-store: file:/certs/codered-truststore.p12
+      trust-store-type: PKCS12
+      trust-store-password: ${INCIDENT_TLS_TRUSTSTORE_PASSWORD}
+      validate-server-certificate: true
+      verify-hostname: true

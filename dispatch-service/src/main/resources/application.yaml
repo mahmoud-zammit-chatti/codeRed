@@ -2,5 +2,19 @@ server:
   port: 8082
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/code-red
+
   application:
     name: dispatch-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5433/dispatch_db
+    username: admin
+    password: ${DISPATCH_DB_PASS}
+  jpa:
+    hibernate:
+      ddl-auto: validate

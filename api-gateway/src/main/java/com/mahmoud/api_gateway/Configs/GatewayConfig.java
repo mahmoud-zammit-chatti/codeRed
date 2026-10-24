@@ -17,16 +17,13 @@ public class GatewayConfig {
         return builder.routes()
                 .route("incident-service", r -> r
                         .path("/api/incidents/**")
-                        .uri("http://localhost:8081"))
+                        .uri("https://localhost:8081"))
                 .route("dispatch-service", r -> r
                         .path("/api/dispatch/**")
                         .uri("http://localhost:8082"))
-                .route("ai-service", r -> r
-                        .path("/api/ai/**")
-                        .uri("http://localhost:8083"))
                 .route("notification-service", r -> r
                         .path("/api/notifications/**")
-                        .uri("http://localhost:8084"))
+                        .uri("http://locahost:8084"))
                 .build();
     }
 }
