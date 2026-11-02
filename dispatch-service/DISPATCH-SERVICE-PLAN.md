@@ -96,28 +96,33 @@ These are logical entities; names and field types can be finalized during the sc
 ### `Dispatch`
 
 - `id` (UUID)
-- `incidentId` (UUID, unique if the rule is one dispatch per incident)
+- `incidentId` (UUID, unique )
 - `status` (`IN_PROGRESS`, `COMPLETED`, `CANCELLED`)
 - `createdAt`, `updatedAt`
-- `createdBy` (authenticated MIL/operator subject)
+- `createdBy` (authenticated MIL Id)
 - Optional terminal metadata: `completedAt` / `completedBy`, `cancelledAt` / `cancelledBy` / `cancellationReason`
 
-### `DispatchAssignment`
+### `Unit`
 
 - `id` (UUID)
-- `dispatchId` (local foreign key)
-- `unitId` (UUID reference to a unit owned by this service)
-- `assignedAt`, `assignedBy`
-- `workCompletedAt`, `workCompletedBy` (if completion is recorded per unit)
-- `returnedAt`, `returnedBy` (or another verified return signal)
-- Optional `removedAt`, `removedBy`, and reason for an assignment ended before normal return
+- `unitCode` (string)
+- `ServiceType` (Enum)
+- `stationId` (UUID)
+- `status` (string)
+- `operationalMetadata` (JSONB) (to be discussed)
 
-Representing assignments separately supports multiple units, reassignment, and audit history. A unique constraint or equivalent concurrency control must prevent the same unit from being active in more than one dispatch at once.
+#### `Station`
 
-### `Unit` and `Station`
+- `id` (UUID)
+- `name` (string)
+- `location` (JSONB)
+- `serviceType` (Enum)
+- `operationalMetadata` (JSONB) (to be discussed)
 
-- `Unit`: `id`, `unitCode`, `unitType`, `stationId`, `status`, and operational metadata needed for eligibility.
-- `Station`: `id`, `name`, location coordinates, and service/type information as required by the domain.
+### `ServiceType`
+- `PARAMEDIC`
+- `FIREFIGHTER`
+- `POLICE`
 - `UnitType`: define the allowed values (for example police, paramedic, firefighter) and whether the type represents a service category or a specific capability.
 
 Prefer an internal responder/user identifier over a national ID such as `CIN` unless there is a documented requirement to store that sensitive identifier.
